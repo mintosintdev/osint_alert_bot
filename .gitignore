@@ -1,0 +1,25 @@
+# === СЕКРЕТЫ И КОНФИГИ ===
+.env
+*.key
+*.pem
+
+# === PYTHON ===
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# === СОСТОЯНИЕ И ДАННЫЕ ===
+state.json
+*.db
+*.sqlite3
+
+# === IDE / OS ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# === LOGS ===
+*.log
