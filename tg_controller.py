@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from telegram.request import HTTPXRequest
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
-from summarizer import search_on_demand
+from summarizer import search_on_demand, search_on_demand_direct
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -93,8 +93,8 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result_data = await search_on_demand(query)
     try:
         await status_msg.edit_text(
-            result_data["summary"], 
-            parse_mode="Markdown", 
+            result_data["summary"],
+            parse_mode="Markdown",
             reply_markup=_safe_refine_button(result_data["label"])
         )
     except Exception as e:
@@ -108,21 +108,29 @@ async def search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка обычного текста как on-demand поиска."""
     query = update.message.text.strip()
     if len(query) < 3:
         return
 
+    # === ПРОПУСКАЕМ LLM-ГЕНЕРАЦИЮ ДЛЯ ГОТОВЫХ ДОРКОВ ===
+    is_raw_dork = query.startswith("/dork ") or any(op in query for op in ["site:", "filetype:", "intitle:", "intext:"])
+    
     status_msg = await update.message.reply_text(
-        f"🔎 *Ищу:* `{query}`\n⏳ Подожди пару секунд...", 
+        f"🔎 *Ищу:* `{query[:50]}...`\n⏳ {'Прямой поиск по дорку' if is_raw_dork else 'Генерирую дорки и ищу'}...", 
         parse_mode="Markdown"
     )
 
-    result_data = await search_on_demand(query)
+    if is_raw_dork:
+        # Прямой поиск без LLM-генерации
+        clean_query = query.replace("/dork ", "").strip()
+        result_data = await search_on_demand_direct(clean_query)
+    else:
+        result_data = await search_on_demand(query)
+    
     try:
         await status_msg.edit_text(
-            result_data["summary"], 
-            parse_mode="Markdown", 
+            result_data["summary"],
+            parse_mode="Markdown",
             reply_markup=_safe_refine_button(result_data["label"])
         )
     except Exception as e:
