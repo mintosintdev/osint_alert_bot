@@ -3,73 +3,119 @@ import json
 import logging
 import os
 from groq import Groq
-from config import GROQ_MODEL
+from config import GROQ_MODEL, GROQ_API_KEY
 
 logger = logging.getLogger(__name__)
 
+if not GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY not found in config or environment variables")
+
+client = Groq(api_key=GROQ_API_KEY)
+
 # Универсальный промпт для ГЛОБАЛЬНОГО поиска
-DORK_SYSTEM_PROMPT = """You are an elite OSINT analyst specializing in advanced search operators for SearXNG.
-Generate 3-5 precise search dorks based on the user's query and context.
+DORK_GENERATOR_SYSTEM = """Ты — Senior OSINT Analyst с 10-летним опытом в разведке по открытым источникам. Твоя задача — генерировать высокоточные поисковые запросы (Google Dorks) для SearXNG, чтобы найти максимально релевантную информацию по запросу пользователя.
 
-RULES:
-- Use operators: site:, intitle:, intext:, filetype:, OR, "", -
-- For Telegram: site:t.me OR site:teletype.in
-- Always generate variants in relevant languages (en + original language)
-- NEVER use date operators
-- Return ONLY valid JSON with this EXACT structure:
-  {"label": "short topic tag max 30 chars", "dorks": ["dork1", "dork2"]}
-- "label" must be a concise summary of the search intent in Russian/Ukrainian (e.g., "КПП Краковец", "Фронт Покровск")
-- No explanations, just raw JSON"""
+ПРАВИЛА ГЕНЕРАЦИИ ДОРКОВ:
+1. АНАЛИЗ ЗАПРОСА: Разбей запрос пользователя на ключевые сущности: [Объект], [Действие/Событие], [Локация], [Время], [Тип источника].
+2. СТРАТЕГИЯ ПОИСКА: Для каждого аспекта создай отдельный дорк. Не смешивай всё в одну кучу.
+3. ИСПОЛЬЗОВАНИЕ ОПЕРАТОРОВ:
+   - `site:` — ограничивай доменом (например, site:.ua, site:.gov.ua, site:t.me, site:linkedin.com).
+   - `filetype:` — ищи документы (pdf, xlsx, docx, pptx) для отчетов, смет, протоколов.
+   - `intitle:` / `inurl:` — ищи по заголовкам или URL (для админок, панелей, специфичных страниц).
+   - `intext:` — ищи по содержанию конкретных фраз.
+   - `-` (минус) — исключай мусор (спам, реклама, нерелевантные сайты).
+   - `"..."` — используй кавычки для точного совпадения фраз.
+4. КОНТЕКСТНАЯ АДАПТАЦИЯ:
+   - Если запрос про **компанию/фирму**: ищи реестры, суды, тендеры, новости, сотрудников.
+   - Если запрос про **человека**: ищи соцсети, упоминания в СМИ, профессиональные профили.
+   - Если запрос про **событие/новость**: ищи первоисточники, Telegram-каналы, официальные сводки.
+   - Если запрос про **локацию/МАФы/инфраструктуру**: ищи карты, госзакупки, местные новости, форумы жителей.
+5. ЯЗЫК И ЛОКАЛИЗАЦИЯ: Генерируй дорки на языке запроса и на английском (если это международный контекст). Учитывай региональные домены (.ua, .pl, .eu).Если запрос содержит кириллицу или специфические локальные термины (напр., 'МАФ', 'Прозорро'), приоритет отдавай доркам на языке оригинала (украинском/русском), так как местные источники чаще используют родной язык.
+6. ИЗБЕГАЙ МУСОРА: Исключай сайты-агрегаторы объявлений (если не нужно), спам-форумы, пиратские торренты.
+
+ФОРМАТ ОТВЕТА:
+Верни JSON-объект со следующей структурой:
+{
+  "label": "Короткое, емкое название запроса (до 25 символов) для кнопки в Telegram",
+  "dorks": [
+    "дорк_1",
+    "дорк_2",
+    "дорк_3",
+    "дорк_4",
+    "дорк_5"
+  ]
+}
+
+ПРИМЕРЫ:
+Запрос: "ТОВ Київ Сервіс суди"
+Ответ:
+{
+  "label": "Київ Сервіс: Судові справи",
+  "dorks": [
+    "site:reyestr.court.gov.ua \"ТОВ Київ Сервіс\"",
+    "\"ТОВ Київ Сервіс\" filetype:pdf рішення суду",
+    "site:youcontrol.com.ua \"ТОВ Київ Сервіс\" судові рішення",
+    "\"Київ Сервіс\" спір господарський сайт:.ua",
+    "-site:wikipedia.org -site:facebook.com \"ТОВ Київ Сервіс\" скандал"
+  ]
+}
+
+Запрос: "МАФ Вишгород закупівлі 2024"
+Ответ:
+{
+  "label": "МАФ Вишгород: Тендери 2024",
+  "dorks": [
+    "site:prozorro.gov.ua \"Вишгород\" МАФ 2024",
+    "\"Вишгородська міська рада\" кіоск закупівля filetype:pdf",
+    "site:t.me \"Вишгород\" МАФ демонтаж OR установка",
+    "\"малих архітектурних форм\" Вишгород договір",
+    "site:nv.ua OR site:suspilne.media \"Вишгород\" МАФ корупція OR скандал"
+  ]
+}
+
+ТВОЯ ЦЕЛЬ: Найти то, что скрыто от обычного поиска. Будь креативным, но строгим к синтаксису."""
 
 
-async def generate_dorks(query: str, context: str = "") -> list[str]:
-    """
-    Генерирует поисковые дорки через LLM.
+async def generate_dorks(query: str, context: str = "") -> tuple[str, list[str]]:
+    """Генерирует умные дорки через Groq с JSON-ответом."""
     
-    Args:
-        query: Поисковый запрос пользователя
-        context: Дополнительный контекст (ключевые слова цели, регион и т.д.)
-    
-    Returns:
-        Список готовых дорков для SearXNG
-    """
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        logger.error("❌ GROQ_API_KEY не найден в переменных окружения")
-        return [query]  # Фолбэк на сырой запрос
-    
-    client = Groq(api_key=api_key)
-    user_prompt = f"Query: {query}\nContext: {context}" if context else f"Query: {query}"
-    
+    user_prompt = f"Запрос пользователя: {query}\nДополнительный контекст: {context}"
+
     try:
         response = client.chat.completions.create(
             model=GROQ_MODEL,
             messages=[
-                {"role": "system", "content": DORK_SYSTEM_PROMPT},
+                {"role": "system", "content": DORK_GENERATOR_SYSTEM},
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.2,
             max_tokens=400,
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"} # Ключевой момент!
         )
-        
+
         content = response.choices[0].message.content.strip()
+        
+        # Парсим JSON
         data = json.loads(content)
+        
+        # Извлекаем label и dorks
+        label = data.get("label", query[:25]) # Фолбэк, если LLM забыл label
         dorks = data.get("dorks", [])
         
         if not dorks:
-            logger.warning(f"⚠️ LLM вернул пустой список дорков для: {query}")
-            return [query]
-            
-        logger.info(f"🧠 Сгенерировано {len(dorks)} дорков для '{query}':")
-        for d in dorks:
-            logger.debug(f"   → {d}")
-            
-        return dorks
+            logger.warning(f"⚠️ LLM вернула пустой список дорков для: {query}")
+            # Фолбэк: простой дорк, если LLM накосячил
+            return query[:25], [f'"{query}"']
+
+        logger.info(f"🧠 Сгенерировано {len(dorks)} дорков для '{query}': {dorks}")
         
+        return label, dorks
+
     except json.JSONDecodeError as e:
-        logger.error(f"❌ Невалидный JSON от LLM: {e}\nRaw: {content[:200]}")
-        return [query]
+        logger.error(f" Ошибка парсинга JSON от Groq: {e}")
+        logger.error(f"Сырой ответ: {content}")
+        return query[:25], [f'"{query}"'] # Безопасный фолбэк
+        
     except Exception as e:
-        logger.error(f"❌ Ошибка генерации дорков: {e}")
-        return [query]
+        logger.error(f"❌ Ошибка вызова Groq API: {e}")
+        return query[:25], [f'"{query}"'] # Безопасный фолбэк
