@@ -1,34 +1,68 @@
 """RAG-поиск: SearXNG дорки → реальный контент → Groq саммари."""
+import asyncio
 import aiohttp
 import os
 import logging
-from urllib.parse import quote_plus
+from datetime import datetime
 from dotenv import load_dotenv
 from config import GROQ_MODEL
+from db import get_cached_results, save_to_cache
+from dork_generator import generate_dorks
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-# Локальный SearXNG (как в geo_monitor)
 SEARXNG_URL = "http://localhost:8304/search"
 
-ON_DEMAND_SYSTEM = """Ты OSINT-аналитик. Тебе даны РЕАЛЬНЫЕ результаты поиска по запросу пользователя.
-Проанализируй их и сформируй краткую сводку.
+# === ПРОМПТЫ ===
+ON_DEMAND_SYSTEM = """Ты элитный OSINT-аналитик. Тебе даны РЕАЛЬНЫЕ результаты поиска.
+Сформируй структурированную сводку с Evidence Tree.
 
 ПРАВИЛА:
-- Используй ТОЛЬКО предоставленные источники. НЕ выдумывай факты.
-- Если в источниках нет ответа — прямо скажи "По данному запросу свежих данных не найдено".
-- Указывай ссылки на источники.
-- Формат: Markdown, структурированно, без воды."""
+- Используй ТОЛЬКО предоставленные источники. НЕ выдумывай.
+- Если данных нет — прямо скажи "По данному запросу свежих данных не найдено".
+- Формат ответа (строго Markdown):
+
+🧠 **Ключевые выводы:**
+• [Вывод 1]
+• [Вывод 2]
+
+📎 **Evidence Tree (подтверждение):**
+> 💬 "[Цитата из источника]"
+> 🌐 [Название источника](URL)
+
+⚠️ **Что НЕ удалось подтвердить:**
+• [Факты, которые искали, но не нашли]
+
+Отвечай ТОЛЬКО отчётом, без вводных слов."""
 
 ON_DEMAND_USER = """Запрос: {query}
-Дата: 10 июня 2026
+Дата: {date}
 
 РЕЗУЛЬТАТЫ ПОИСКА:
 {context}
 
 Сформируй сводку по этим данным."""
 
+MINT_PROMPT = """Ты OSINT-аналитик. Сформируй краткий отчёт в формате MINT OSINT по следующей новости:
+
+ЗАГОЛОВОК: {title}
+ТЕКСТ: {summary}
+ССЫЛКА: {link}
+ЦЕЛЬ МОНИТОРИНГА: {target}
+
+ФОРМАТ ОТВЕТА (строго Markdown):
+🔴 **Что произошло:** [1-2 предложения]
+📍 **Где:** [населённый пункт, район]
+🕐 **Когда:** [время/дата из текста или "уточняется"]
+🔗 **Источник:** [{title}]({link})
+⚠️ **Достоверность:** [низкая/средняя/высокая] — [почему]
+💡 **Рекомендация:** [что делать / за чем следить дальше]
+
+Отвечай ТОЛЬКО отчётом, без вводных слов."""
+
+
+# === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
 
 async def _searxng_search(query: str, num_results: int = 5) -> list[dict]:
     """Поиск через локальный SearXNG."""
@@ -36,7 +70,7 @@ async def _searxng_search(query: str, num_results: int = 5) -> list[dict]:
         "q": query,
         "format": "json",
         "number_of_results": num_results,
-        "language": "ru",
+        "categories": "general,news",
     }
     try:
         async with aiohttp.ClientSession() as session:
@@ -63,30 +97,83 @@ def _build_context(results: list[dict]) -> str:
     """Формирует контекст из результатов поиска для LLM."""
     if not results:
         return "Результаты поиска отсутствуют."
-    
     parts = []
     for i, r in enumerate(results, 1):
         parts.append(f"[{i}] {r['title']}\n{r['content']}\nИсточник: {r['url']}")
     return "\n\n---\n\n".join(parts)
 
 
-async def search_on_demand(query: str) -> str:
-    """RAG-поиск: дорки → реальный контент → Groq саммари."""
+def _filter_relevant_results(results: list[dict], query: str) -> list[dict]:
+    """Убирает мусор из выдачи SearXNG по базовым ключевым словам."""
+    keywords = [w.lower() for w in query.split() if len(w) >= 3]
+    if not keywords:
+        return results
+        
+    filtered = []
+    for r in results:
+        text = f"{r.get('title', '')} {r.get('content', '')}".lower()
+        if any(kw in text for kw in keywords):
+            filtered.append(r)
+    
+    removed = len(results) - len(filtered)
+    if removed > 0:
+        logger.info(f"🗑️ Отфильтровано {removed} нерелевантных результатов")
+    return filtered
+
+
+# === ОСНОВНЫЕ ФУНКЦИИ ===
+
+async def search_on_demand(query: str, context: str = "") -> dict:
+    """RAG-поиск с кэшированием: кэш → LLM-дорки → SearXNG → Groq саммари."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        return "⚠️ GROQ_API_KEY не задан"
+        return {"summary": "⚠️ GROQ_API_KEY не задан", "label": query[:25]}
 
-    # 1. Реальный поиск через SearXNG
-    logger.info(f"🔎 Этап 1: Поиск через SearXNG: {query}")
-    results = await _searxng_search(query)
+    # 1. Проверяем Search Memory
+    cached = get_cached_results(query)
+    label = query[:25]  # Фолбэк для label
     
-    # 2. Формируем контекст
-    context = _build_context(results)
-    
-    # 3. Скармливаем в Groq
-    logger.info(f"🧠 Этап 2: Анализ {len(results)} источников через Groq...")
-    prompt = ON_DEMAND_USER.format(query=query, context=context)
-    
+    if cached is not None:
+        logger.info(f"💾 Используем кэш для: {query}")
+        all_results = cached
+    else:
+        # 2. Генерируем дорки и ищем
+        logger.info(f"🧠 Генерация дорков для: {query}")
+        gen_result = await generate_dorks(query, context)
+        
+        # Распаковка: generate_dorks может вернуть tuple или list
+        if isinstance(gen_result, tuple):
+            label, dorks = gen_result
+        else:
+            dorks = gen_result
+
+        all_results = []
+        seen_urls = set()
+
+        for dork in dorks:
+            logger.info(f"🔎 Поиск по дорку: {dork}")
+            results = await _searxng_search(dork, num_results=5)
+            for r in results:
+                if r["url"] not in seen_urls:
+                    seen_urls.add(r["url"])
+                    all_results.append(r)
+            await asyncio.sleep(1.5)
+
+        # Сохраняем в кэш только если есть результаты
+        if all_results:
+            save_to_cache(query, all_results, is_news=True)
+
+    # 3. Фильтрация и формирование контекста
+    relevant_results = _filter_relevant_results(all_results, query)
+    context_text = _build_context(relevant_results[:10])
+
+    # 4. Отправка в Groq
+    prompt = ON_DEMAND_USER.format(
+        query=query,
+        date=datetime.now().strftime("%d %B %Y"),
+        context=context_text
+    )
+
     payload = {
         "model": GROQ_MODEL,
         "messages": [
@@ -105,36 +192,19 @@ async def search_on_demand(query: str) -> str:
                 headers=headers, json=payload, timeout=aiohttp.ClientTimeout(total=30)
             ) as resp:
                 if resp.status != 200:
-                    logger.error(f"Groq error: {await resp.text()}")
-                    return f"⚠️ Ошибка Groq: {resp.status}"
+                    error_text = await resp.text()
+                    logger.error(f"Groq error: {error_text}")
+                    return {"summary": f"⚠️ Ошибка Groq: {resp.status}", "label": label}
                 data = await resp.json()
-                return data["choices"][0]["message"]["content"]
+                summary = data["choices"][0]["message"]["content"]
+                return {"summary": summary, "label": label}
     except Exception as e:
         logger.error(f"Ошибка Groq: {e}")
-        return f"⚠️ Ошибка генерации: {e}"
-
-
-# MINT_PROMPT и generate_summary оставляем как есть (они работают для алертов)
-MINT_PROMPT = """Ты OSINT-аналитик. Сформируй краткий отчёт в формате MINT OSINT по следующей новости:
-
-ЗАГОЛОВОК: {title}
-ТЕКСТ: {summary}
-ССЫЛКА: {link}
-ЦЕЛЬ МОНИТОРИНГА: {target}
-
-ФОРМАТ ОТВЕТА (строго Markdown):
-🔴 **Что произошло:** [1-2 предложения]
-📍 **Где:** [населённый пункт, район]
-🕐 **Когда:** [время/дата из текста или "уточняется"]
-🔗 **Источник:** [{title}]({link})
-⚠️ **Достоверность:** [низкая/средняя/высокая] — [почему]
-💡 **Рекомендация:** [что делать / за чем следить дальше]
-
-Отвечай ТОЛЬКО отчётом, без вводных слов."""
+        return {"summary": f"⚠️ Ошибка генерации: {e}", "label": label}
 
 
 async def generate_summary(item: dict) -> str:
-    """Генерирует MINT OSINT саммари для алерта."""
+    """Генерирует MINT OSINT саммари для RSS-алертов."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         return "⚠️ GROQ_API_KEY не задан"

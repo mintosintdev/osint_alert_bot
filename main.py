@@ -4,7 +4,7 @@ import argparse
 import logging
 from config import TARGETS, STATE_FILE
 from monitor import collect_alerts
-from summarizer import generate_summary
+from summarizer import generate_summary, search_on_demand
 from notifier import send_telegram
 from state_manager import StateManager
 
@@ -71,35 +71,26 @@ async def run(interactive=False, query=None, dry_run=False):
     if interactive:
         logger.info("💬 Интерактивный режим: ожидание ответа в Telegram...")
         # TODO: Реализовать ожидание ответа от пользователя в TG
-        # Пока что fallback на конфиг
         logger.warning("⚠️ Интерактивный режим ещё не реализован, используем config.py")
-    
+
     if query:
         logger.info(f"🎯 Кастомный запрос: {query}")
-        # TODO: Переопределить TARGETS на основе query
-    
-    sm = StateManager(STATE_FILE)
-    alerts = await collect_alerts(TARGETS if not query else None)
+        summary = await search_on_demand(query)
 
-    new_count = 0
-    for alert in alerts:
-        if sm.is_seen(alert["id"]):
-            continue
+        result_data = await search_on_demand(query)
+        summary = result_data["summary"]
+        label = result_data["label"]
 
-        logger.info(f"🆕 Новая цель: {alert['target']} | {alert['title'][:60]}...")
-        summary = await generate_summary(alert)
-        message = f"{summary}\n\n🏷️ *Цель:* {alert['target']}"
-        
+        message = f"{summary}\n\n🏷️ *Запрос:* `{query}`"
+
         if dry_run:
             logger.info(f"📝 [DRY-RUN] Сообщение:\n{message}")
         else:
             await send_telegram(message)
-        
-        sm.mark_seen(alert["id"])
-        new_count += 1
 
-    logger.info(f"✅ Обработано {new_count} новых алертов из {len(alerts)} найденных")
-
+        logger.info("✅ Обработка кастомного запроса завершена")
+        return  # ← Важно: выходим, чтобы не запускать мониторинг целей по config
+    
 
 if __name__ == "__main__":
     args = parse_args()
