@@ -1,35 +1,27 @@
-"""Управление состоянием (дедупликация)."""
 import json
+import os
 from pathlib import Path
-import logging
-
-logger = logging.getLogger(__name__)
 
 class StateManager:
-    def __init__(self, state_file: Path):
-        self.state_file = state_file
-        self.state = self._load()
+    def __init__(self, filepath: str):
+        self.filepath = Path(filepath)
+        self.seen_ids = set()
 
-    def _load(self) -> dict:
-        if self.state_file.exists():
+    async def load(self):
+        if self.filepath.exists():
             try:
-                return json.loads(self.state_file.read_text(encoding="utf-8"))
-            except Exception as e:
-                logger.error(f"Ошибка чтения state: {e}")
-        return {"seen_ids": []}
+                with open(self.filepath, 'r') as f:
+                    data = json.load(f)
+                    self.seen_ids = set(data.get("seen_ids", []))
+            except:
+                self.seen_ids = set()
 
-    def save(self):
-        self.state_file.write_text(
-            json.dumps(self.state, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+    async def save(self):
+        with open(self.filepath, 'w') as f:
+            json.dump({"seen_ids": list(self.seen_ids)}, f)
 
     def is_seen(self, item_id: str) -> bool:
-        return item_id in self.state["seen_ids"]
+        return item_id in self.seen_ids
 
     def mark_seen(self, item_id: str):
-        if not self.is_seen(item_id):
-            self.state["seen_ids"].append(item_id)
-            # Храним только последние 1000 ID чтобы файл не рос бесконечно
-            if len(self.state["seen_ids"]) > 1000:
-                self.state["seen_ids"] = self.state["seen_ids"][-1000:]
-            self.save()
+        self.seen_ids.add(item_id)

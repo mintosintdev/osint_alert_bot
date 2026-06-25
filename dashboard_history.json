@@ -1,0 +1,491 @@
+{
+  "searches": [
+    {
+      "id": "712ad961",
+      "query": "Логистические тенденции в Украине в 2025 году",
+      "label": "Логистика UA 2025",
+      "target_date": "2025-06-03",
+      "timestamp": "2026-06-25T11:16:01.323849",
+      "duration": 6.6,
+      "dorks": [
+        "site:ua \"логистические тенденции 2025\"",
+        "filetype:pdf \"логистика в Украине 2025\"",
+        "intitle:\"Логистические тенденции в Украине\" 2025",
+        "site:.gov.ua \"логистика Украина 2025\"",
+        "filetype:pptx \"логистические тенденции в Украине 2025\""
+      ],
+      "per_dork_results": {
+        "site:ua \"логистические тенденции 2025\"": [
+          {
+            "title": "Обзор логистических трендов 2025 | PAKLINE GROUP",
+            "url": "https://pakline-group.com.ua/ru/about/news/ohliad-lohistychnykh-trendiv-2025",
+            "content": "7 лип. 2025 р. · Обзор логистических трендов 2025: Роботизация, искусственный интеллект, автоматизация · Электромобили для городской доставки; · Многоразовую ..."
+          },
+          {
+            "title": "Тренды логистики в 2025 году - Haski.ua",
+            "url": "https://haski.ua/ru/blog/trendy-logistyky-v-2025-roczi",
+            "content": "12 груд. 2024 р. · Тренды логистики в 2025 году · 1. Цифровая трансформация и автоматизация · 2. Принятие решений на основе данных и предиктивная аналитика · 3."
+          },
+          {
+            "title": "Будущее логистики в 2024-2025: Тренды, формирующие индустрию",
+            "url": "https://www.proficargo.com.ua/ru/novosti/budushhee-logistiki-v-2024-2025-trendy-formiruyushhie-industriyu.html",
+            "content": "28 лист. 2024 р. · Процесс доставки грузов в 2025: ⭐ новейшие тренды ⭐ ❗Искусственный интеллект в логистике❗⚡Доставка в Украину во время войны: что учитывать."
+          },
+          {
+            "title": "Новые вызовы и модели роста: итоги XXXIII Дня Логиста и ...",
+            "url": "https://marketer.ua/ru/results-of-the-xxxiii-logistic-day-and-distributionmaster/",
+            "content": "12 груд. 2025 р. · 27–28 ноября 2025 года в Киеве состоялась XXXIII Всеукраинская выставка и конференция XXXIII День Логиста и DistributionMaster-2025!"
+          },
+          {
+            "title": "Маршрут перечислен: ключевые тренды 2025 года в украинской ...",
+            "url": "https://delo.ua/ru/transport/marsrut-perecislen-klyucevye-trendy-2025-goda-v-ukrainskoi-logistike-456745/",
+            "content": "10 груд. 2025 р. · цифровизация и переход к 5PL – от традиционной логистики к data-driven-подходу: внедрение e-TTN, автоматизация таможенных процедур, интеграция ..."
+          }
+        ],
+        "filetype:pdf \"логистика в Украине 2025\"": [
+          {
+            "title": "[PDF] ЛОГІСТИКА В СУЧАСНИХ УМОВАХ РОЗВИТКУ ЕКОНОМІКИ УКРАЇНИ",
+            "url": "https://www.econ.vernadskyjournals.in.ua/journals/2025/36_75_1/13.pdf",
+            "content": "У статті розглядається роль логістики як важливого елемента сучасної економіки, її вплив на розвиток підприємств та економічних процесів."
+          },
+          {
+            "title": "[PDF] Інфраструктура та логістика - UkraineInvest",
+            "url": "https://ukraineinvest.gov.ua/wp-content/uploads/2025/01/infrastruktura-ta-logistyka.pdf",
+            "content": "Географічне розташування України робить її важливим транзитним коридором для торгівлі та подорожей між. Європою, Азією та Близьким Сходом. Разом з тим, Україна ..."
+          },
+          {
+            "title": "[PDF] РОЗВИТОК ІНТЕРМОДАЛЬНОЇ ЛОГІСТИКИ УКРАЇНА–ЄС У ...",
+            "url": "https://www.econa.org.ua/index.php/econa/article/download/6422/6565657706",
+            "content": "РОЗВИТОК ІНТЕРМОДАЛЬНОЇ ЛОГІСТИКИ УКРАЇНА–ЄС У. КОНТЕКСТІ ІНТЕГРАЦІЇ ДО ТРАНСПОРТНОЇ МЕРЕЖІ TEN-T. АНОТАЦІЯ. Вступ. Після 2022 року внаслідок воєнних дій, ..."
+          },
+          {
+            "title": "[PDF] Розвиток сталої логістики",
+            "url": "https://elar.khmnu.edu.ua/bitstreams/1af2a824-3917-46d9-bf00-1a42eb47ffa9/download",
+            "content": "Березовський А.А. «Розвиток сталої логістики: міжнародна практика та можливості для України». – Кваліфікаційна наукова праця на правах рукопису."
+          },
+          {
+            "title": "[PDF] № 12(22) 2025",
+            "url": "https://perspectives.pp.ua/index.php/sas/article/download/34329/34305/50340",
+            "content": "Анотація. У статті розглянуто актуальні виклики функціонування логістич- них компаній в умовах глобальної конкуренції та структурної трансформації."
+          }
+        ],
+        "intitle:\"Логистические тенденции в Украине\" 2025": [
+          {
+            "title": "Тренды логистики в 2025 году - Haski.ua",
+            "url": "https://haski.ua/ru/blog/trendy-logistyky-v-2025-roczi",
+            "content": "12 груд. 2024 р. · 1. Цифровая трансформация и автоматизация · 2. Принятие решений на основе данных и предиктивная аналитика · 3. Тренды на устойчивость и зеленую ..."
+          },
+          {
+            "title": "Будущее логистики в 2024-2025: Тренды, формирующие индустрию",
+            "url": "https://www.proficargo.com.ua/ru/novosti/budushhee-logistiki-v-2024-2025-trendy-formiruyushhie-industriyu.html",
+            "content": "28 лист. 2024 р. · Процесс доставки грузов в 2025: ⭐ новейшие тренды ⭐ ❗Искусственный интеллект в логистике❗⚡Доставка в Украину во время войны: что учитывать."
+          },
+          {
+            "title": "Обзор логистических трендов 2025 | PAKLINE GROUP",
+            "url": "https://pakline-group.com.ua/ru/about/news/ohliad-lohistychnykh-trendiv-2025",
+            "content": "7 лип. 2025 р. · Обзор логистических трендов 2025: Роботизация, искусственный интеллект, автоматизация · Существенное снижение ошибок из-за человеческого фактора; ..."
+          },
+          {
+            "title": "Логистика Украины в 2025 году: результаты государственной ...",
+            "url": "https://bytheway.com.ua/ru/news/novini-pro-vantazhniy-svit/logistika-ukrayini-u-2025-roci-rezultati-derzhavnoyi-politiki-kontrol-bezpeki-ta-vektori-rozvitku/",
+            "content": "31 груд. 2025 р. · Среди приоритетов — развитие мультимодальных перевозок, модернизация ключевых железнодорожных узлов и портов, а также упрощение трансграничных ..."
+          },
+          {
+            "title": "Тренды в логистике на 2025 год: чего ожидать бизнесу в Украине?",
+            "url": "https://mintrans.news/ru/logistics/trendi-v-logisticzi-na-2025-rik-chogo-ochikuvati-biznesu-v-ukrayini",
+            "content": "27 січ. 2025 р. · В Украине цифровизация логистики является приоритетом. Компании активно внедряют системы управления транспортом (TMS) и складами (WMS), что ..."
+          }
+        ],
+        "site:.gov.ua \"логистика Украина 2025\"": [
+          {
+            "title": "[PDF] Інфраструктура та логістика - UkraineInvest",
+            "url": "https://ukraineinvest.gov.ua/wp-content/uploads/2025/01/infrastruktura-ta-logistyka.pdf",
+            "content": "Географічне розташування України робить її важливим транзитним коридором для торгівлі та подорожей між. Європою, Азією та Близьким Сходом. Разом з тим, Україна ..."
+          },
+          {
+            "title": "[PDF] № 12(22) 2025",
+            "url": "http://jnas.nbuv.gov.ua/j-pdf/sucachs_2025_12_67.pdf",
+            "content": "Анотація. У статті розглянуто актуальні виклики функціонування логістич- них компаній в умовах глобальної конкуренції та структурної трансформації."
+          },
+          {
+            "title": "Нові можливості для жінок у сфері логістики: стартував проєкт із ...",
+            "url": "https://mindev.gov.ua/news/novi-mozhlyvosti-dlia-zhinok-u-sferi-lohistyky-startuvav-proiekt-iz-pidhotovky-ta-pratsevlashtuvannia",
+            "content": "1 вер. 2025 р. · Навчання триватиме з жовтня по грудень 2025 року. Менеджерки зовнішньоекономічної діяльності проходитимуть курс дистанційно, тому можна ..."
+          },
+          {
+            "title": "В Одесі відбувся форум Freight Forwarders Updates 2025:",
+            "url": "https://oda.od.gov.ua/ua/news/v-odesi-vidbuvsya-forum-freight-forwarders-updates-2025",
+            "content": "21 бер. 2025 р. · В Одесі відбувся форум Freight Forwarders Updates 2025: КОНТЕЙНЕРНА ЛОГІСТИКА 2025: ВІД КРИЗИ ДО СТАЛОГО РОЗВИТКУ. АДАПТАЦІЯ. ЦИФРОВІЗАЦІЯ."
+          },
+          {
+            "title": "Ефективна логістика: перспективи співпраці бізнесу з «Укрпоштою»",
+            "url": "https://voladm.gov.ua/new/efektivna-logistika-perspektivi-spivpraci-biznesu-z-ukrposhtoyu/",
+            "content": "Наприкінці 2024 року ми автоматизували всі сортувальні центри Укрпошти. Зокрема, тариф «пріоритетний» гарантує доставку адресату в межах двох ..."
+          }
+        ],
+        "filetype:pptx \"логистические тенденции в Украине 2025\"": [
+          {
+            "title": "[PPT] 2025 год - Организация сотрудничества железных дорог",
+            "url": "https://osjd.org/api/media/resources/4609?action=download",
+            "content": "... логистическая компания — Евразийский железнодорожный альянс. 3 ... развития инфраструктуры железнодорожного транспорта государств-членов Союза ..."
+          },
+          {
+            "title": "[PPT] Презентация PowerPoint",
+            "url": "https://skyhansa.com/wp-content/uploads/2025/05/%D0%9F%D1%80%D0%B5%D0%B7%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F-SkyHansa.pptx",
+            "content": "Целью проекта является создание грузопассажирского аэропорта на территории СЭЗ «Хоргос – Восточные ворота» для развитие эффективного транспортно-логистического ..."
+          },
+          {
+            "title": "[PPT] Скачать презентацию",
+            "url": "https://www.tbforum.ru/hubfs/TBF/2025/TBF_11-02-25_Transport_Choroshilov.pptx?hsLang=ru",
+            "content": "2025. п.2 статьи 12.1 Федерального Закона от 09 февраля 2007 №16-ФЗ «О ... Интеллектуальное развитие, способность к логическим суждениям и ..."
+          },
+          {
+            "title": "[PPT] Презентация PowerPoint",
+            "url": "https://storage.yandexcloud.net/dobro-static/prod/docs/2af51b3c-94fc-4c0c-9153-9d57ce08eace/%D0%A0%D0%B0%D0%B7%D0%B2%D0%B8%D1%82%D0%B8%D0%B5_%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D0%BD%D0%BE%D0%B9_%D0%B4%D0%B5%D1%8F%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8_%D0%B2_%D0%9D%D0%B8%D0%B6%D0%B5%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D1%81%D0%BA%D0%BE%D0%B9_%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D1%82%D0%B8%20%281%29.pptx",
+            "content": "Беспилотный транспорт и логистические системы ... Учебно-интенсивные сборы по направлению «Агрогенетика» для старшеклассников Нижегородской области в 2025 году."
+          },
+          {
+            "title": "[PPT] PptxGenJS Presentation",
+            "url": "https://xn--c1agxigl8dr.xn--p1acf/wp-content/uploads/2025/03/zayavka-turmarshruty.pptx",
+            "content": "Курс, направление подготовки; Фото ... Оформляется в формате таблицы с указанием времени, локациии активностей с учётом логистики, размещения и питания."
+          }
+        ]
+      },
+      "total_results": 21,
+      "results": [
+        {
+          "title": "Обзор логистических трендов 2025 | PAKLINE GROUP",
+          "url": "https://pakline-group.com.ua/ru/about/news/ohliad-lohistychnykh-trendiv-2025",
+          "content": "7 лип. 2025 р. · Обзор логистических трендов 2025: Роботизация, искусственный интеллект, автоматизация · Электромобили для городской доставки; · Многоразовую ..."
+        },
+        {
+          "title": "Тренды логистики в 2025 году - Haski.ua",
+          "url": "https://haski.ua/ru/blog/trendy-logistyky-v-2025-roczi",
+          "content": "12 груд. 2024 р. · Тренды логистики в 2025 году · 1. Цифровая трансформация и автоматизация · 2. Принятие решений на основе данных и предиктивная аналитика · 3."
+        },
+        {
+          "title": "Будущее логистики в 2024-2025: Тренды, формирующие индустрию",
+          "url": "https://www.proficargo.com.ua/ru/novosti/budushhee-logistiki-v-2024-2025-trendy-formiruyushhie-industriyu.html",
+          "content": "28 лист. 2024 р. · Процесс доставки грузов в 2025: ⭐ новейшие тренды ⭐ ❗Искусственный интеллект в логистике❗⚡Доставка в Украину во время войны: что учитывать."
+        },
+        {
+          "title": "Новые вызовы и модели роста: итоги XXXIII Дня Логиста и ...",
+          "url": "https://marketer.ua/ru/results-of-the-xxxiii-logistic-day-and-distributionmaster/",
+          "content": "12 груд. 2025 р. · 27–28 ноября 2025 года в Киеве состоялась XXXIII Всеукраинская выставка и конференция XXXIII День Логиста и DistributionMaster-2025!"
+        },
+        {
+          "title": "Маршрут перечислен: ключевые тренды 2025 года в украинской ...",
+          "url": "https://delo.ua/ru/transport/marsrut-perecislen-klyucevye-trendy-2025-goda-v-ukrainskoi-logistike-456745/",
+          "content": "10 груд. 2025 р. · цифровизация и переход к 5PL – от традиционной логистики к data-driven-подходу: внедрение e-TTN, автоматизация таможенных процедур, интеграция ..."
+        },
+        {
+          "title": "[PDF] ЛОГІСТИКА В СУЧАСНИХ УМОВАХ РОЗВИТКУ ЕКОНОМІКИ УКРАЇНИ",
+          "url": "https://www.econ.vernadskyjournals.in.ua/journals/2025/36_75_1/13.pdf",
+          "content": "У статті розглядається роль логістики як важливого елемента сучасної економіки, її вплив на розвиток підприємств та економічних процесів."
+        },
+        {
+          "title": "[PDF] Інфраструктура та логістика - UkraineInvest",
+          "url": "https://ukraineinvest.gov.ua/wp-content/uploads/2025/01/infrastruktura-ta-logistyka.pdf",
+          "content": "Географічне розташування України робить її важливим транзитним коридором для торгівлі та подорожей між. Європою, Азією та Близьким Сходом. Разом з тим, Україна ..."
+        },
+        {
+          "title": "[PDF] РОЗВИТОК ІНТЕРМОДАЛЬНОЇ ЛОГІСТИКИ УКРАЇНА–ЄС У ...",
+          "url": "https://www.econa.org.ua/index.php/econa/article/download/6422/6565657706",
+          "content": "РОЗВИТОК ІНТЕРМОДАЛЬНОЇ ЛОГІСТИКИ УКРАЇНА–ЄС У. КОНТЕКСТІ ІНТЕГРАЦІЇ ДО ТРАНСПОРТНОЇ МЕРЕЖІ TEN-T. АНОТАЦІЯ. Вступ. Після 2022 року внаслідок воєнних дій, ..."
+        },
+        {
+          "title": "[PDF] Розвиток сталої логістики",
+          "url": "https://elar.khmnu.edu.ua/bitstreams/1af2a824-3917-46d9-bf00-1a42eb47ffa9/download",
+          "content": "Березовський А.А. «Розвиток сталої логістики: міжнародна практика та можливості для України». – Кваліфікаційна наукова праця на правах рукопису."
+        },
+        {
+          "title": "[PDF] № 12(22) 2025",
+          "url": "https://perspectives.pp.ua/index.php/sas/article/download/34329/34305/50340",
+          "content": "Анотація. У статті розглянуто актуальні виклики функціонування логістич- них компаній в умовах глобальної конкуренції та структурної трансформації."
+        },
+        {
+          "title": "Логистика Украины в 2025 году: результаты государственной ...",
+          "url": "https://bytheway.com.ua/ru/news/novini-pro-vantazhniy-svit/logistika-ukrayini-u-2025-roci-rezultati-derzhavnoyi-politiki-kontrol-bezpeki-ta-vektori-rozvitku/",
+          "content": "31 груд. 2025 р. · Среди приоритетов — развитие мультимодальных перевозок, модернизация ключевых железнодорожных узлов и портов, а также упрощение трансграничных ..."
+        },
+        {
+          "title": "Тренды в логистике на 2025 год: чего ожидать бизнесу в Украине?",
+          "url": "https://mintrans.news/ru/logistics/trendi-v-logisticzi-na-2025-rik-chogo-ochikuvati-biznesu-v-ukrayini",
+          "content": "27 січ. 2025 р. · В Украине цифровизация логистики является приоритетом. Компании активно внедряют системы управления транспортом (TMS) и складами (WMS), что ..."
+        },
+        {
+          "title": "[PDF] № 12(22) 2025",
+          "url": "http://jnas.nbuv.gov.ua/j-pdf/sucachs_2025_12_67.pdf",
+          "content": "Анотація. У статті розглянуто актуальні виклики функціонування логістич- них компаній в умовах глобальної конкуренції та структурної трансформації."
+        },
+        {
+          "title": "Нові можливості для жінок у сфері логістики: стартував проєкт із ...",
+          "url": "https://mindev.gov.ua/news/novi-mozhlyvosti-dlia-zhinok-u-sferi-lohistyky-startuvav-proiekt-iz-pidhotovky-ta-pratsevlashtuvannia",
+          "content": "1 вер. 2025 р. · Навчання триватиме з жовтня по грудень 2025 року. Менеджерки зовнішньоекономічної діяльності проходитимуть курс дистанційно, тому можна ..."
+        },
+        {
+          "title": "В Одесі відбувся форум Freight Forwarders Updates 2025:",
+          "url": "https://oda.od.gov.ua/ua/news/v-odesi-vidbuvsya-forum-freight-forwarders-updates-2025",
+          "content": "21 бер. 2025 р. · В Одесі відбувся форум Freight Forwarders Updates 2025: КОНТЕЙНЕРНА ЛОГІСТИКА 2025: ВІД КРИЗИ ДО СТАЛОГО РОЗВИТКУ. АДАПТАЦІЯ. ЦИФРОВІЗАЦІЯ."
+        },
+        {
+          "title": "Ефективна логістика: перспективи співпраці бізнесу з «Укрпоштою»",
+          "url": "https://voladm.gov.ua/new/efektivna-logistika-perspektivi-spivpraci-biznesu-z-ukrposhtoyu/",
+          "content": "Наприкінці 2024 року ми автоматизували всі сортувальні центри Укрпошти. Зокрема, тариф «пріоритетний» гарантує доставку адресату в межах двох ..."
+        },
+        {
+          "title": "[PPT] 2025 год - Организация сотрудничества железных дорог",
+          "url": "https://osjd.org/api/media/resources/4609?action=download",
+          "content": "... логистическая компания — Евразийский железнодорожный альянс. 3 ... развития инфраструктуры железнодорожного транспорта государств-членов Союза ..."
+        },
+        {
+          "title": "[PPT] Презентация PowerPoint",
+          "url": "https://skyhansa.com/wp-content/uploads/2025/05/%D0%9F%D1%80%D0%B5%D0%B7%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F-SkyHansa.pptx",
+          "content": "Целью проекта является создание грузопассажирского аэропорта на территории СЭЗ «Хоргос – Восточные ворота» для развитие эффективного транспортно-логистического ..."
+        },
+        {
+          "title": "[PPT] Скачать презентацию",
+          "url": "https://www.tbforum.ru/hubfs/TBF/2025/TBF_11-02-25_Transport_Choroshilov.pptx?hsLang=ru",
+          "content": "2025. п.2 статьи 12.1 Федерального Закона от 09 февраля 2007 №16-ФЗ «О ... Интеллектуальное развитие, способность к логическим суждениям и ..."
+        },
+        {
+          "title": "[PPT] Презентация PowerPoint",
+          "url": "https://storage.yandexcloud.net/dobro-static/prod/docs/2af51b3c-94fc-4c0c-9153-9d57ce08eace/%D0%A0%D0%B0%D0%B7%D0%B2%D0%B8%D1%82%D0%B8%D0%B5_%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D0%BD%D0%BE%D0%B9_%D0%B4%D0%B5%D1%8F%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8_%D0%B2_%D0%9D%D0%B8%D0%B6%D0%B5%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D1%81%D0%BA%D0%BE%D0%B9_%D0%BE%D0%B1%D0%BB%D0%B0%D1%81%D1%82%D0%B8%20%281%29.pptx",
+          "content": "Беспилотный транспорт и логистические системы ... Учебно-интенсивные сборы по направлению «Агрогенетика» для старшеклассников Нижегородской области в 2025 году."
+        }
+      ],
+      "analysis": {
+        "summary": [
+          "Логистические тенденции в Украине в 2025 году включают цифровизацию, автоматизацию и использование искусственного интеллекта.",
+          "Развитие интермодальной логистики и интеграция в транспортную сеть TEN-T являются ключевыми направлениями.",
+          "Украина становится важным транзитным коридором для торговли и путешествий между Европой, Азией и Ближним Востоком.",
+          "Внедрение e-TTN, автоматизация таможенных процедур и интеграция логистических процессов с помощью данных являются перспективными направлениями.",
+          "Развитие устойчивой логистики и внедрение новых технологий для снижения воздействия на окружающую среду также являются важными тенденциями."
+        ],
+        "suggested_queries": [
+          "Логистические инновации в Украине",
+          "Развитие логистики в условиях войны",
+          "Влияние цифровизации на логистику",
+          "Перспективы развития интермодальной логистики в Украине",
+          "Устойчивая логистика в Украине"
+        ],
+        "entities_to_watch": [
+          "PAKLINE GROUP",
+          "Haski.ua",
+          "ProfiCargo",
+          "DistributionMaster-2025",
+          "UkraineInvest",
+          "Министерство инфраструктуры Украины",
+          "Ассоциация логистиков Украины"
+        ]
+      }
+    },
+    {
+      "id": "95fefab1",
+      "query": "MLP Group logistics  Ukraine",
+      "label": "MLP Group",
+      "target_date": "2025-06-03",
+      "timestamp": "2026-06-25T11:14:26.788798",
+      "duration": 7.24,
+      "dorks": [
+        "site:ua \"MLP Group logistics\" 2025",
+        "filetype:pdf \"MLP Group logistics Ukraine\" 2025",
+        "intitle:logistics \"MLP Group Ukraine\" 2025-06-03",
+        "site:com \"MLP Group logistics Ukraine\" 2025-06-03",
+        "filetype:docx \"MLP Group logistics in Ukraine\" 2025"
+      ],
+      "per_dork_results": {
+        "site:ua \"MLP Group logistics\" 2025": [
+          {
+            "title": "[PDF] МПЗІС-2025.pdf - MPZIS",
+            "url": "http://mpzis.dnu.dp.ua/wp-content/uploads/2025/11/%D0%9C%D0%9F%D0%97%D0%86%D0%A1-2025.pdf",
+            "content": "21 лист. 2025 р. · allows modeling a transport-logistics system as a weighted directed graph G = ... Quantillion Research Group (2025). Multi-Agent Decision Models ..."
+          },
+          {
+            "title": "Маршрут перераховано: ключові тренди 2025 року в українській логістиці — Delo.ua",
+            "url": "https://delo.ua/transport/marsrut-pereraxovano-klyucovi-trendi-2025-roku-v-ukrayinskii-logistici-456745/",
+            "content": "Протягом першого півріччя 2025 року площа нових київських складів становила 107 тис. кв. м. Окрім будівництва нових, відбувається ..."
+          },
+          {
+            "title": "Russian oligarch Gutseriev transferred the business to a Ukrainian ...",
+            "url": "https://newssky.com.ua/en/rosijskij-oligarh-guczeri%D1%94v-perepisav-biznes-na-ukra%D1%97nku-abi-uniknuti-sankczij/",
+            "content": "The Pechersk District Court of Kyiv has canceled the arrest of the logistics business of sanctioned Russian oligarch Mikhail Gutseriev - \"MLP Chaika\" near ..."
+          },
+          {
+            "title": "[PDF] КМОСС-2025 - УДХТУ",
+            "url": "https://udhtu.edu.ua/wp-content/uploads/2025/11/zbirnyk-kmoss-2025_compressed.pdf",
+            "content": "7 лист. 2025 р. · Group) simulation software. The modeling was performed for a five-year production period (2025-2029) using low-salinity injection water ..."
+          },
+          {
+            "title": "Glass walls detection and reconstruction method based on Fresnel optical model and GBR-RANSAC algorithm for indoor envi…",
+            "url": "https://ouci.dntb.gov.ua/works/l1112WWY/",
+            "content": "ABSTRACT Urban logistics faces mounting pressure from growing demand and increasingly diversified service needs. However, traditional ground‐based delivery methods are becoming unsustainable, as they contribute to traffic congestion and environmental degradation."
+          }
+        ],
+        "filetype:pdf \"MLP Group logistics Ukraine\" 2025": [
+          {
+            "title": "MLP Group - 2025 Company Profile, Funding & Competitors",
+            "url": "https://tracxn.com/d/companies/mlp-group/__PZgZvcIYEnWTRI6XggJ2GqEypgNj3JygfnxH-1Q9LJY",
+            "content": "MLP Group is a funded company, having raised a total of $87.5M in its 1st and only funding round, a Conventional Debt round on Apr 14, 2021."
+          },
+          {
+            "title": "MLP Group achieves outstanding financial results and leasing performance in 2024, setting the stage for record revenues in 2025 - MLP Group S.A.",
+            "url": "https://mlpgroup.com/en/news/mlp-group-achieves-outstanding-financial-results-and-leasing-performance-in-2024-setting-the-stage-for-record-revenues-in-2025/",
+            "content": "In 2025, MLP Group plans to deliver approximately 250-300 thousand sqm of space. Poland remains its key market, where the Group intends to pursue further dynamic growth. The plans include new projects on a plot of land acquired in 2024 in Rzeszów, ..."
+          },
+          {
+            "title": "MLP Group Expands with a New Logistics Center in Rzeszow, Set to Launch in 2025 - Poland Insight",
+            "url": "https://polandinsight.com/mlp-group-expands-with-a-new-logistics-center-in-rzeszow-set-to-launch-in-2025/",
+            "content": "MLP Group has acquired land ownership and obtained environmental decisions for the implementation of the new logistics and industrial park in the Podkarpackie province. The realization of MLP Rzeszow will commence in the second quarter of 2025."
+          },
+          {
+            "title": "Logistics operator comes to MLP Bucharest West | EurobuildCEE",
+            "url": "https://eurobuildcee.com/en/news/35411-logistics-operator-comes-to-mlp-bucharest-west",
+            "content": "Architecture and urban planning Construction Coronavirus Corporate social responsibility E-commerce ESG Eurobuild Awards Eurobuild FM EurobuildCEE Events Exclusive Eye to eye For Ukraine Green projects Health & beauty Hotels Human resources Infrastructure Interior design Investment & finance Land acquisitions Material partner Office & mixed-use development Property and Facility Management Public buildings Residential Retail & leisure Technology Warehouse & industrial ... A Romanian logistics company has leased space in MLP Bucharest West."
+          },
+          {
+            "title": "[PDF] Slajd 1 - MLP Group",
+            "url": "https://mlpgroup.com/wp-content/uploads/2026/03/Presentation-YE-2025-1.pdf",
+            "content": "YE 2025 Investor Presentation. 17. LEASING RESULTS YE 2025. European industrial & logistics market figures. 02. TOTAL A-CLASS STOCK IN EUROPE. (IN MILLION SQM)."
+          }
+        ],
+        "intitle:logistics \"MLP Group Ukraine\" 2025-06-03": [],
+        "site:com \"MLP Group logistics Ukraine\" 2025-06-03": [
+          {
+            "title": "Latest CEE Legal News",
+            "url": "https://ceelegalmatters.com/deals-and-cases?task=search%27%27&start=1674",
+            "content": "Gen Temizer Erdogan Girgin Attorney Partnership has advised Ticimax and its founder and sole shareholder Cenk Cigdemli on the sale of a majority stake to Team."
+          },
+          {
+            "title": "[PDF] Consolidated financial statements as of December 31, 2025",
+            "url": "https://www.carrefour.com/sites/default/files/2026-02/VEN_Comptes%20consolide%CC%81s%202025%20incluant%20le%20rapport%20des%20CAC.pdf",
+            "content": "25 лют. 2026 р. · Conflict in Ukraine. The Group does not do business in Ukraine, Russia or Belarus. It does not hold any assets or interests in entities in ..."
+          },
+          {
+            "title": "VRT stuurt waarschijnlijk geen kandidaat naar Eurovisie ... - TikTok",
+            "url": "https://www.tiktok.com/@vtmnieuws_be/video/7641188843265248545",
+            "content": "18 трав. 2026 р. · It's also a practical choice for groups wanting easy logistics and predictable prices. ... An average clubhouse meeting #mlp #mlpfandom ..."
+          },
+          {
+            "title": "Creative Industries and the Circular Economy: A Reality Check Across ...",
+            "url": "https://www.mdpi.com/2071-1050/17/23/10460",
+            "content": "The MLP explains how systemic change emerges through interactions across three levels. The landscape refers to the broader socio-technical context ..."
+          },
+          {
+            "title": "Filipino powerhouse imports in MSC 2025 - Facebook",
+            "url": "https://www.facebook.com/groups/mlbbphnet/posts/1087853829444146/",
+            "content": "15 черв. 2025 р. · \"If we keep it at 22 teams, we are moving from 88 players to 132 players.\" •. \"One last nugget; MLP is not committing to rolling the remaining 6 ..."
+          }
+        ],
+        "filetype:docx \"MLP Group logistics in Ukraine\" 2025": [
+          {
+            "title": "[DOC] ThesiscorrectionFINAL.docx - White Rose eTheses Online",
+            "url": "https://etheses.whiterose.ac.uk/id/eprint/35185/1/ThesiscorrectionFINAL.docx",
+            "content": "... 2025; a notion backed by the World Bank and IMF At the local level, the ... group at the Prime Minister's diaspora engagement team. Everyone, including ..."
+          }
+        ]
+      },
+      "total_results": 16,
+      "results": [
+        {
+          "title": "[PDF] МПЗІС-2025.pdf - MPZIS",
+          "url": "http://mpzis.dnu.dp.ua/wp-content/uploads/2025/11/%D0%9C%D0%9F%D0%97%D0%86%D0%A1-2025.pdf",
+          "content": "21 лист. 2025 р. · allows modeling a transport-logistics system as a weighted directed graph G = ... Quantillion Research Group (2025). Multi-Agent Decision Models ..."
+        },
+        {
+          "title": "Маршрут перераховано: ключові тренди 2025 року в українській логістиці — Delo.ua",
+          "url": "https://delo.ua/transport/marsrut-pereraxovano-klyucovi-trendi-2025-roku-v-ukrayinskii-logistici-456745/",
+          "content": "Протягом першого півріччя 2025 року площа нових київських складів становила 107 тис. кв. м. Окрім будівництва нових, відбувається ..."
+        },
+        {
+          "title": "Russian oligarch Gutseriev transferred the business to a Ukrainian ...",
+          "url": "https://newssky.com.ua/en/rosijskij-oligarh-guczeri%D1%94v-perepisav-biznes-na-ukra%D1%97nku-abi-uniknuti-sankczij/",
+          "content": "The Pechersk District Court of Kyiv has canceled the arrest of the logistics business of sanctioned Russian oligarch Mikhail Gutseriev - \"MLP Chaika\" near ..."
+        },
+        {
+          "title": "[PDF] КМОСС-2025 - УДХТУ",
+          "url": "https://udhtu.edu.ua/wp-content/uploads/2025/11/zbirnyk-kmoss-2025_compressed.pdf",
+          "content": "7 лист. 2025 р. · Group) simulation software. The modeling was performed for a five-year production period (2025-2029) using low-salinity injection water ..."
+        },
+        {
+          "title": "Glass walls detection and reconstruction method based on Fresnel optical model and GBR-RANSAC algorithm for indoor envi…",
+          "url": "https://ouci.dntb.gov.ua/works/l1112WWY/",
+          "content": "ABSTRACT Urban logistics faces mounting pressure from growing demand and increasingly diversified service needs. However, traditional ground‐based delivery methods are becoming unsustainable, as they contribute to traffic congestion and environmental degradation."
+        },
+        {
+          "title": "MLP Group - 2025 Company Profile, Funding & Competitors",
+          "url": "https://tracxn.com/d/companies/mlp-group/__PZgZvcIYEnWTRI6XggJ2GqEypgNj3JygfnxH-1Q9LJY",
+          "content": "MLP Group is a funded company, having raised a total of $87.5M in its 1st and only funding round, a Conventional Debt round on Apr 14, 2021."
+        },
+        {
+          "title": "MLP Group achieves outstanding financial results and leasing performance in 2024, setting the stage for record revenues in 2025 - MLP Group S.A.",
+          "url": "https://mlpgroup.com/en/news/mlp-group-achieves-outstanding-financial-results-and-leasing-performance-in-2024-setting-the-stage-for-record-revenues-in-2025/",
+          "content": "In 2025, MLP Group plans to deliver approximately 250-300 thousand sqm of space. Poland remains its key market, where the Group intends to pursue further dynamic growth. The plans include new projects on a plot of land acquired in 2024 in Rzeszów, ..."
+        },
+        {
+          "title": "MLP Group Expands with a New Logistics Center in Rzeszow, Set to Launch in 2025 - Poland Insight",
+          "url": "https://polandinsight.com/mlp-group-expands-with-a-new-logistics-center-in-rzeszow-set-to-launch-in-2025/",
+          "content": "MLP Group has acquired land ownership and obtained environmental decisions for the implementation of the new logistics and industrial park in the Podkarpackie province. The realization of MLP Rzeszow will commence in the second quarter of 2025."
+        },
+        {
+          "title": "Logistics operator comes to MLP Bucharest West | EurobuildCEE",
+          "url": "https://eurobuildcee.com/en/news/35411-logistics-operator-comes-to-mlp-bucharest-west",
+          "content": "Architecture and urban planning Construction Coronavirus Corporate social responsibility E-commerce ESG Eurobuild Awards Eurobuild FM EurobuildCEE Events Exclusive Eye to eye For Ukraine Green projects Health & beauty Hotels Human resources Infrastructure Interior design Investment & finance Land acquisitions Material partner Office & mixed-use development Property and Facility Management Public buildings Residential Retail & leisure Technology Warehouse & industrial ... A Romanian logistics company has leased space in MLP Bucharest West."
+        },
+        {
+          "title": "[PDF] Slajd 1 - MLP Group",
+          "url": "https://mlpgroup.com/wp-content/uploads/2026/03/Presentation-YE-2025-1.pdf",
+          "content": "YE 2025 Investor Presentation. 17. LEASING RESULTS YE 2025. European industrial & logistics market figures. 02. TOTAL A-CLASS STOCK IN EUROPE. (IN MILLION SQM)."
+        },
+        {
+          "title": "Latest CEE Legal News",
+          "url": "https://ceelegalmatters.com/deals-and-cases?task=search%27%27&start=1674",
+          "content": "Gen Temizer Erdogan Girgin Attorney Partnership has advised Ticimax and its founder and sole shareholder Cenk Cigdemli on the sale of a majority stake to Team."
+        },
+        {
+          "title": "[PDF] Consolidated financial statements as of December 31, 2025",
+          "url": "https://www.carrefour.com/sites/default/files/2026-02/VEN_Comptes%20consolide%CC%81s%202025%20incluant%20le%20rapport%20des%20CAC.pdf",
+          "content": "25 лют. 2026 р. · Conflict in Ukraine. The Group does not do business in Ukraine, Russia or Belarus. It does not hold any assets or interests in entities in ..."
+        },
+        {
+          "title": "VRT stuurt waarschijnlijk geen kandidaat naar Eurovisie ... - TikTok",
+          "url": "https://www.tiktok.com/@vtmnieuws_be/video/7641188843265248545",
+          "content": "18 трав. 2026 р. · It's also a practical choice for groups wanting easy logistics and predictable prices. ... An average clubhouse meeting #mlp #mlpfandom ..."
+        },
+        {
+          "title": "Creative Industries and the Circular Economy: A Reality Check Across ...",
+          "url": "https://www.mdpi.com/2071-1050/17/23/10460",
+          "content": "The MLP explains how systemic change emerges through interactions across three levels. The landscape refers to the broader socio-technical context ..."
+        },
+        {
+          "title": "Filipino powerhouse imports in MSC 2025 - Facebook",
+          "url": "https://www.facebook.com/groups/mlbbphnet/posts/1087853829444146/",
+          "content": "15 черв. 2025 р. · \"If we keep it at 22 teams, we are moving from 88 players to 132 players.\" •. \"One last nugget; MLP is not committing to rolling the remaining 6 ..."
+        },
+        {
+          "title": "[DOC] ThesiscorrectionFINAL.docx - White Rose eTheses Online",
+          "url": "https://etheses.whiterose.ac.uk/id/eprint/35185/1/ThesiscorrectionFINAL.docx",
+          "content": "... 2025; a notion backed by the World Bank and IMF At the local level, the ... group at the Prime Minister's diaspora engagement team. Everyone, including ..."
+        }
+      ],
+      "analysis": {
+        "summary": [
+          "MLP Group планирует доставить около 250-300 тысяч квадратных метров пространства в 2025 году.",
+          "Компания фокусируется на развитии логистических центров в Польше и Румынии.",
+          "MLP Group достигла выдающихся финансовых результатов и показателей аренды в 2024 году, что закладывает основу для рекордных доходов в 2025 году."
+        ],
+        "suggested_queries": [
+          "MLP Group логистические центры в Украине",
+          "Логистические тенденции в Украине в 2025 году",
+          "Финансовые результаты MLP Group в 2025 году"
+        ],
+        "entities_to_watch": [
+          "MLP Group",
+          "Quantillion Research Group",
+          "Mikhail Gutseriev",
+          "Украинская логистическая индустрия"
+        ]
+      }
+    }
+  ]
+}

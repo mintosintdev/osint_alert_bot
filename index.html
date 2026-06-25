@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSINTRadar · Border Sentinel</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ── Design Tokens (Material You Dark) ── */
+:root {
+  --p:   #D0BCFF;  --p-c: #4F378B;  --on-p: #381E72;  --on-pc: #EADDFF;
+  --sec: #CCC2DC;  --sec-c: #4A4458;
+  --s:   #1C1B1F;  --s1: #211F26;   --s2: #26232D;    --s3: #2B2834;
+  --sv:  #49454F;  --on-s: #E6E1E5; --on-sv: #CAC4D0;
+  --out: #938F99;  --out-v: #49454F;
+  --err: #F2B8B5;  --warn: #FCD34D; --ok: #86EFAC;    --info: #93C5FD;
+  --r: 200ms cubic-bezier(.2,0,0,1);
+  --rs: 8px; --rm: 12px; --rl: 16px; --rxl: 28px;
+}
+body.light {
+  --p:#6750A4; --p-c:#EADDFF; --on-p:#fff; --on-pc:#21005D;
+  --sec-c:#E8DEF8; --s:#FFFBFE; --s1:#F7F2FA; --s2:#F3EDF7; --s3:#EDE7F6;
+  --sv:#E7E0EC; --on-s:#1C1B1F; --on-sv:#49454F; --out:#79747E; --out-v:#CAC4D0;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--s);color:var(--on-s);min-height:100vh;overflow-x:hidden;line-height:1.5;transition:background .25s,color .25s}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit}
+a{color:var(--p);text-decoration:none}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--sv);border-radius:3px}
+
+/* ── Top Bar ── */
+.bar{position:fixed;top:0;left:0;right:0;z-index:200;height:60px;background:var(--s1);border-bottom:1px solid var(--out-v);display:flex;align-items:center;gap:10px;padding:0 14px;transition:box-shadow var(--r)}
+.bar.up{box-shadow:0 2px 20px rgba(0,0,0,.5)}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--p-c);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--on-pc);flex-shrink:0;letter-spacing:-.5px}
+.logo-t{font-size:17px;font-weight:600;color:var(--on-s);letter-spacing:-.3px}
+.logo-t span{color:var(--p)}
+
+/* status pill */
+.status-pill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1px solid var(--out-v);font-size:12px;color:var(--on-sv);cursor:default;transition:all var(--r)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--out);flex-shrink:0}
+.status-pill.online .status-dot{background:var(--ok);box-shadow:0 0 0 3px rgba(134,239,172,.2);animation:pulse-ok 2s infinite}
+.status-pill.online{border-color:rgba(134,239,172,.3);color:var(--ok)}
+.status-pill.offline .status-dot{background:var(--err)}
+.status-pill.offline{border-color:rgba(242,184,181,.3);color:var(--err)}
+@keyframes pulse-ok{0%,100%{box-shadow:0 0 0 3px rgba(134,239,172,.2)}50%{box-shadow:0 0 0 6px rgba(134,239,172,.06)}}
+
+.search-wrap{flex:1;max-width:480px;margin:0 auto;position:relative;display:flex;align-items:center}
+.search-wrap input{width:100%;height:38px;background:var(--sv);border:1px solid transparent;border-radius:19px;padding:0 36px 0 40px;color:var(--on-s);font-size:13px;outline:none;transition:all var(--r)}
+.search-wrap input:focus{background:var(--s2);border-color:var(--p);box-shadow:0 0 0 2px rgba(208,188,255,.12)}
+.search-wrap input::placeholder{color:var(--on-sv)}
+.si{position:absolute;left:13px;color:var(--on-sv);font-size:16px;pointer-events:none}
+.sc{position:absolute;right:11px;color:var(--on-sv);font-size:14px;opacity:0;transition:opacity var(--r);padding:3px;border-radius:50%;cursor:pointer}
+.sc:hover{background:var(--sv);color:var(--on-s)}
+.sc.v{opacity:1}
+
+.bar-acts{display:flex;align-items:center;gap:2px;margin-left:auto}
+.ib{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--on-sv);font-size:18px;transition:all var(--r);position:relative}
+.ib:hover{background:rgba(208,188,255,.08);color:var(--on-s)}
+.ib:active{transform:scale(.93)}
+.ib .badge{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--err);border:2px solid var(--s1)}
+
+/* ── Nav Rail ── */
+.rail{position:fixed;left:0;top:60px;bottom:0;width:72px;background:var(--s1);border-right:1px solid var(--out-v);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;z-index:190}
+.ni{width:100%;display:flex;flex-direction:column;align-items:center;padding:3px 0;cursor:pointer;border-radius:var(--rl);transition:all var(--r)}
+.nind{width:56px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center;transition:all var(--r);font-size:19px;color:var(--on-sv)}
+.ni:hover .nind{background:rgba(208,188,255,.08);color:var(--on-s)}
+.ni.act .nind{background:var(--sec-c);color:var(--on-pc)}
+.nl{font-size:10px;color:var(--on-sv);margin-top:2px;white-space:nowrap}
+.ni.act .nl{color:var(--on-s);font-weight:500}
+.ni[data-page=settings]{margin-top:auto}
+
+/* ── Layout ── */
+.mc{margin-top:60px;margin-left:72px;padding:20px;min-height:calc(100vh - 60px)}
+.page{display:none;animation:fi .18s ease}
+.page.act{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Stats Grid ── */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:20px}
+.sc2{background:var(--s2);border:1px solid var(--out-v);border-radius:var(--rl);padding:18px;display:flex;flex-direction:column;gap:7px;transition:all var(--r);cursor:default;position:relative;overflow:hidden}
+.sc2:hover{background:var(--s3);border-color:var(--p);transform:translateY(-2px)}
+.sc2::after{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:var(--p-c);opacity:.08;pointer-events:none}
+.sico{width:36px;height:36px;border-radius:var(--rm);background:var(--p-c);display:flex;align-items:center;justify-content:center;color:var(--on-pc);font-size:17px}
+.slbl{font-size:11px;color:var(--on-sv);text-transform:uppercase;letter-spacing:.5px}
+.sval{font-size:26px;font-weight:600;color:var(--on-s);line-height:1}
+.sdelta{font-size:11px;color:var(--ok);display:flex;align-items:center;gap:3px}
+.sdelta.neg{color:var(--err)}
+
+/* ── Section ── */
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.st{font-size:15px;font-weight:600;color:var(--on-s)}
+.sct{background:var(--p-c);color:var(--on-pc);border-radius:10px;padding:2px 7px;font-size:11px;font-weight:500}
+.sa{margin-left:auto;display:flex;gap:7px}
+
+/* ── Card ── */
+.card{background:var(--s2);border:1px solid var(--out-v);border-radius:var(--rl);padding:18px;transition:all var(--r)}
+.card.click:hover{background:var(--s3);border-color:var(--p)}
+.two{display:grid;grid-template-columns:1fr 320px;gap:18px}
+@media(max-width:1050px){.two{grid-template-columns:1fr}}
+
+/* ── Search Form ── */
+.search-form{background:var(--s2);border:1px solid var(--p-c);border-radius:var(--rxl);padding:20px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px}
+.sf-row{display:flex;gap:10px;flex-wrap:wrap}
+.sf-field{flex:1;min-width:200px;display:flex;flex-direction:column;gap:5px}
+.sf-label{font-size:12px;color:var(--on-sv);font-weight:500}
+.sf-input{background:var(--s3);border:1px solid var(--out-v);border-radius:var(--rm);padding:10px 14px;color:var(--on-s);font-size:13px;outline:none;transition:all var(--r);width:100%}
+.sf-input:focus{border-color:var(--p);background:var(--s2);box-shadow:0 0 0 2px rgba(208,188,255,.1)}
+.sf-input::placeholder{color:var(--on-sv)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--rxl);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--r);border:none}
+.btn-p{background:var(--p);color:var(--on-p)}
+.btn-p:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-p:active{transform:scale(.97)}
+.btn-o{background:transparent;border:1px solid var(--out-v);color:var(--on-sv)}
+.btn-o:hover{border-color:var(--p);color:var(--on-s);background:rgba(208,188,255,.06)}
+.btn-sm{padding:6px 13px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important;filter:none!important}
+
+/* ── Feed ── */
+.feed{display:flex;flex-direction:column;gap:9px}
+.fi{background:var(--s2);border:1px solid var(--out-v);border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:7px;transition:all var(--r);cursor:pointer;position:relative;overflow:hidden}
+.fi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--p-c);border-radius:0 2px 2px 0}
+.fi.high::before{background:var(--err)}
+.fi.medium::before{background:var(--warn)}
+.fi.low::before{background:var(--ok)}
+.fi:hover{background:var(--s3);border-color:var(--p);transform:translateX(2px)}
+.fi-title{font-size:13px;font-weight:500;color:var(--on-s);line-height:1.4}
+.fi-url{font-size:11px;color:var(--p);opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-snip{font-size:12px;color:var(--on-sv);line-height:1.5}
+.fi-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tag{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.3px}
+.tag-h{background:rgba(242,184,181,.12);color:var(--err);border:1px solid rgba(242,184,181,.25)}
+.tag-m{background:rgba(252,211,77,.1);color:var(--warn);border:1px solid rgba(252,211,77,.2)}
+.tag-l{background:rgba(134,239,172,.08);color:var(--ok);border:1px solid rgba(134,239,172,.2)}
+.tag-src{background:rgba(204,194,220,.08);color:var(--sec);border:1px solid rgba(204,194,220,.18);font-size:10px;padding:2px 7px;border-radius:4px}
+.ts{font-size:10px;color:var(--on-sv);margin-left:auto}
+
+/* ── Dorks Panel ── */
+.dorks-panel{background:rgba(79,55,139,.12);border:1px solid rgba(208,188,255,.2);border-radius:var(--rl);padding:14px;margin-bottom:16px}
+.dork-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--s3);border-radius:var(--rm);margin-bottom:6px;font-size:12px;font-family:monospace;color:var(--on-sv);word-break:break-all}
+.dork-item:last-child{margin-bottom:0}
+.dork-copy{margin-left:auto;flex-shrink:0;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--on-sv);font-size:13px;cursor:pointer;transition:all var(--r)}
+.dork-copy:hover{background:rgba(208,188,255,.12);color:var(--p)}
+
+/* ── AI Analysis ── */
+.ai-panel{background:linear-gradient(135deg,var(--s2) 0%,rgba(79,55,139,.18) 100%);border:1px solid var(--p-c);border-radius:var(--rl);padding:18px;position:relative;overflow:hidden}
+.ai-panel::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:radial-gradient(circle,rgba(208,188,255,.07) 0%,transparent 70%);pointer-events:none}
+.ai-text{font-size:13px;line-height:1.75;color:var(--on-s);white-space:pre-line}
+.ai-typing::after{content:'▊';animation:blink 1s step-end infinite;color:var(--p)}
+@keyframes blink{50%{opacity:0}}
+
+/* ── Chips ── */
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.chip{display:flex;align-items:center;gap:5px;padding:5px 13px;border-radius:7px;border:1px solid var(--out-v);font-size:12px;color:var(--on-sv);cursor:pointer;transition:all var(--r)}
+.chip:hover{border-color:var(--p);color:var(--on-s);background:rgba(208,188,255,.05)}
+.chip.act{background:var(--p-c);border-color:transparent;color:var(--on-pc)}
+
+/* ── Map ── */
+#map{width:100%;height:480px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--out-v)}
+.leaflet-container{background:#1a1a2e!important}
+.map-controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.radius-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--on-sv)}
+.radius-row input[type=range]{width:120px;accent-color:var(--p)}
+.radius-row input[type=number]{width:60px;background:var(--s3);border:1px solid var(--out-v);border-radius:var(--rs);padding:4px 7px;color:var(--on-s);font-size:12px;outline:none}
+.target-table{width:100%;border-collapse:collapse;font-size:12px}
+.target-table th{text-align:left;color:var(--on-sv);font-weight:500;padding:7px 10px;border-bottom:1px solid var(--out-v)}
+.target-table td{padding:8px 10px;border-bottom:1px solid rgba(73,69,79,.4);color:var(--on-s)}
+.target-table tr:hover td{background:rgba(208,188,255,.04)}
+.dot-status{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ── History ── */
+.hist-item{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--s3);border-radius:var(--rm);cursor:pointer;transition:all var(--r);margin-bottom:7px}
+.hist-item:hover{background:rgba(208,188,255,.08);border:1px solid rgba(208,188,255,.12)}
+.hist-item:last-child{margin-bottom:0}
+.hist-icon{color:var(--p);font-size:15px;flex-shrink:0}
+.hist-text{flex:1;font-size:13px;color:var(--on-s);line-height:1.35}
+.hist-sub{font-size:11px;color:var(--on-sv)}
+.hist-time{font-size:11px;color:var(--on-sv);white-space:nowrap}
+.hist-badge{background:var(--s2);border:1px solid var(--out-v);border-radius:5px;padding:1px 6px;font-size:10px;color:var(--on-sv)}
+
+/* ── Detail Panel ── */
+.detail-panel{background:var(--s2);border:1px solid var(--out-v);border-radius:var(--rl);padding:16px}
+.detail-title{font-size:14px;font-weight:600;color:var(--on-s);margin-bottom:10px}
+.detail-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(73,69,79,.4);font-size:12px}
+.detail-row:last-child{border:none}
+.detail-key{color:var(--on-sv)}
+.detail-val{color:var(--on-s);font-weight:500}
+
+/* ── Graph Canvas ── */
+#gcanvas{width:100%;height:360px;border-radius:var(--rl);border:1px solid var(--out-v);background:var(--s2)}
+
+/* ── Settings ── */
+.sg{margin-bottom:26px}
+.sgt{font-size:12px;font-weight:600;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--out-v)}
+.srow:last-child{border:none}
+.slabel{font-size:13px;color:var(--on-s)}
+.sdesc{font-size:11px;color:var(--on-sv);margin-top:2px}
+.toggle{width:48px;height:28px;border-radius:14px;background:var(--sv);position:relative;cursor:pointer;transition:background var(--r);flex-shrink:0;border:2px solid var(--out)}
+.toggle.on{background:var(--p-c);border-color:var(--p)}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:var(--out);top:3px;left:3px;transition:all var(--r)}
+.toggle.on::after{background:var(--p);transform:translateX(20px)}
+.swatches{display:flex;gap:7px}
+.swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all var(--r)}
+.swatch:hover{transform:scale(1.18)}
+.swatch.act{border-color:#fff;box-shadow:0 0 0 2px var(--p)}
+
+/* ── Toast ── */
+.tc{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none}
+.toast{background:var(--s3);border:1px solid var(--out-v);border-radius:var(--rl);padding:11px 18px;font-size:13px;color:var(--on-s);display:flex;align-items:center;gap:9px;pointer-events:auto;min-width:260px;box-shadow:0 4px 24px rgba(0,0,0,.5);animation:tin .22s cubic-bezier(.2,0,0,1)}
+.toast.out{animation:tout .18s ease forwards}
+@keyframes tin{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes tout{to{opacity:0;transform:translateY(7px) scale(.97)}}
+
+/* ── Skeleton ── */
+.sk{background:linear-gradient(90deg,var(--s2) 25%,var(--s3) 50%,var(--s2) 75%);background-size:200% 100%;animation:sk 1.3s infinite;border-radius:var(--rs)}
+@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center;animation:fi .15s ease}
+.modal-bg.open{display:flex}
+.modal{background:var(--s2);border:1px solid var(--out-v);border-radius:var(--rxl);padding:26px;max-width:400px;width:90%;animation:sup .22s cubic-bezier(.2,0,0,1)}
+@keyframes sup{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal h3{font-size:18px;font-weight:600;margin-bottom:7px}
+.modal p{font-size:13px;color:var(--on-sv);margin-bottom:18px}
+.macts{display:flex;gap:9px;justify-content:flex-end}
+.export-opt{display:flex;align-items:center;gap:10px;padding:11px;background:var(--s3);border-radius:var(--rm);cursor:pointer;margin-bottom:7px}
+.export-opt label{cursor:pointer}
+
+/* ── Empty State ── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--on-sv);text-align:center}
+.empty-icon{font-size:44px;opacity:.35}
+.empty-label{font-size:14px;opacity:.7}
+.empty-sub{font-size:12px;opacity:.5;max-width:220px}
+
+/* ── Error Banner ── */
+.err-banner{background:rgba(242,184,181,.08);border:1px solid rgba(242,184,181,.3);border-radius:var(--rm);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--err);margin-bottom:16px}
+
+/* ── Footer ── */
+footer{border-top:1px solid var(--out-v);padding:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--on-sv);margin-top:48px}
+.flinks{display:flex;gap:10px}
+.flink{display:flex;align-items:center;gap:5px;color:var(--on-sv);font-size:12px;transition:color var(--r)}
+.flink:hover{color:var(--p);text-decoration:none}
+.fbrand{font-weight:500;color:var(--on-s)}
+
+/* ── Responsive ── */
+@media(max-width:700px){.rail{width:0;border:none;overflow:hidden}.mc{margin-left:0;padding:14px}.bar{padding:0 10px}.two{grid-template-columns:1fr}}
+@media(max-width:500px){.logo-t{display:none}}
+
+/* ── Tooltips ── */
+[data-tip]{position:relative}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--s3);color:var(--on-s);border:1px solid var(--out-v);border-radius:6px;padding:3px 8px;font-size:11px;white-space:nowrap;z-index:999;pointer-events:none}
+
+/* ── Misc ── */
+kbd{background:var(--sv);border-radius:4px;padding:1px 5px;font-size:10px;font-family:monospace;color:var(--on-sv);border:1px solid var(--out-v)}
+.pr{color:var(--p)}
+.muted{color:var(--on-sv)}
+input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:var(--sv);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--p);cursor:pointer}
+.spinner{width:16px;height:16px;border:2px solid var(--sv);border-top-color:var(--p);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Leaflet dark tile override */
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
+body.light .leaflet-tile-pane{filter:none}
+.leaflet-popup-content-wrapper{background:var(--s2)!important;color:var(--on-s)!important;border:1px solid var(--out-v)!important;border-radius:var(--rm)!important}
+.leaflet-popup-tip{background:var(--s2)!important}
+.leaflet-control-zoom a{background:var(--s2)!important;color:var(--on-s)!important;border-color:var(--out-v)!important}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="bar" id="bar">
+  <div class="logo">OI</div>
+  <span class="logo-t">OSINT<span>Radar</span></span>
+
+  <div id="statusPill" class="status-pill" title="Backend connection">
+    <span class="status-dot"></span>
+    <span id="statusText">Connecting…</span>
+  </div>
+
+  <div class="search-wrap" role="search">
+    <span class="si">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </span>
+    <input id="gSearch" type="text" placeholder="Search intelligence… (press /)" autocomplete="off" aria-label="Global search">
+    <span class="sc" id="sClear">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </span>
+  </div>
+
+  <div class="bar-acts">
+    <button class="ib" id="themeBtn" data-tip="Toggle theme" aria-label="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="themeIco"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    </button>
+    <button class="ib" id="exportBtn" data-tip="Export data" aria-label="Export">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="ib" aria-label="Notifications" style="position:relative">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span class="badge" id="notifBadge" style="display:none"></span>
+    </button>
+  </div>
+</header>
+
+<!-- NAV RAIL -->
+<nav class="rail" aria-label="Main navigation">
+  <button class="ni act" data-page="dashboard" aria-label="Dashboard">
+    <span class="nind">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </span>
+    <span class="nl">Overview</span>
+  </button>
+  <button class="ni" data-page="search" aria-label="Search">
+    <span class="nind">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </span>
+    <span class="nl">Search</span>
+  </button>
+  <button class="ni" data-page="geo" aria-label="Geolocation">
+    <span class="nind">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+    </span>
+    <span class="nl">Geo</span>
+  </button>
+  <button class="ni" data-page="graph" aria-label="Entity Graph">
+    <span class="nind">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </span>
+    <span class="nl">Graph</span>
+  </button>
+  <button class="ni" data-page="history" aria-label="History">
+    <span class="nind">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+    </span>
+    <span class="nl">History</span>
+  </button>
+  <button class="ni" data-page="settings" aria-label="Settings">
+    <span class="nind">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </span>
+    <span class="nl">Settings</span>
+  </button>
+</nav>
+
+<!-- MAIN -->
+<main class="mc" id="mc">
+
+<!-- ═══ DASHBOARD ═══ -->
+<section class="page act" id="pg-dashboard">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <div>
+      <h1 style="font-size:22px;font-weight:600">Intelligence overview</h1>
+      <p class="muted" style="font-size:12px;margin-top:3px" id="lastRefreshLbl">Fetching stats…</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-o btn-sm" id="refreshDash">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        Refresh
+      </button>
+      <button class="btn btn-p btn-sm" onclick="showPage('search')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        New search
+      </button>
+    </div>
+  </div>
+
+  <div class="sgrid" id="statsGrid">
+    <!-- filled by JS -->
+    <div class="sc2"><div class="sk" style="height:36px;width:36px;border-radius:var(--rm)"></div><div class="sk slbl" style="width:80px;height:10px"></div><div class="sk sval" style="width:60px;height:24px"></div></div>
+    <div class="sc2"><div class="sk" style="height:36px;width:36px;border-radius:var(--rm)"></div><div class="sk slbl" style="width:80px;height:10px"></div><div class="sk sval" style="width:60px;height:24px"></div></div>
+    <div class="sc2"><div class="sk" style="height:36px;width:36px;border-radius:var(--rm)"></div><div class="sk slbl" style="width:80px;height:10px"></div><div class="sk sval" style="width:60px;height:24px"></div></div>
+    <div class="sc2"><div class="sk" style="height:36px;width:36px;border-radius:var(--rm)"></div><div class="sk slbl" style="width:80px;height:10px"></div><div class="sk sval" style="width:60px;height:24px"></div></div>
+  </div>
+
+  <div class="two">
+    <div>
+      <!-- Recent results -->
+      <div class="sh"><span class="st">Recent results</span><span class="sct" id="recentCount">0</span><div class="sa"><button class="btn btn-o btn-sm" onclick="showPage('history')">View all</button></div></div>
+      <div id="dashFeed" class="feed">
+        <div class="fi"><div class="sk" style="height:12px;width:70%;margin-bottom:6px"></div><div class="sk" style="height:10px;width:90%"></div></div>
+        <div class="fi"><div class="sk" style="height:12px;width:60%;margin-bottom:6px"></div><div class="sk" style="height:10px;width:85%"></div></div>
+        <div class="fi"><div class="sk" style="height:12px;width:75%;margin-bottom:6px"></div><div class="sk" style="height:10px;width:80%"></div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- Quick stats -->
+      <div class="card">
+        <div style="font-size:12px;font-weight:600;color:var(--on-s);margin-bottom:10px">Backend status</div>
+        <div id="backendDetails" style="font-size:12px;color:var(--on-sv);line-height:1.9">
+          <div>API: <span id="apiUrl" class="pr">http://127.0.0.1:8000</span></div>
+          <div>SearXNG: <span id="searxStatus" class="muted">—</span></div>
+          <div>AI Model: <span class="pr">Llama 3.3 70B</span></div>
+          <div>DB: <span class="pr">SQLite · border_sentinel.db</span></div>
+        </div>
+      </div>
+
+      <!-- Shortcuts -->
+      <div class="card">
+        <div style="font-size:12px;font-weight:600;color:var(--on-s);margin-bottom:10px">Keyboard shortcuts</div>
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:11px;color:var(--on-sv)">
+          <div style="display:flex;justify-content:space-between"><span>Focus search</span><kbd>/</kbd></div>
+          <div style="display:flex;justify-content:space-between"><span>Dashboard</span><kbd>1</kbd></div>
+          <div style="display:flex;justify-content:space-between"><span>New search</span><kbd>2</kbd></div>
+          <div style="display:flex;justify-content:space-between"><span>Geo map</span><kbd>3</kbd></div>
+          <div style="display:flex;justify-content:space-between"><span>Export</span><kbd>E</kbd></div>
+          <div style="display:flex;justify-content:space-between"><span>Settings</span><kbd>S</kbd></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SEARCH ═══ -->
+<section class="page" id="pg-search">
+  <h1 style="font-size:22px;font-weight:600;margin-bottom:6px">OSINT search</h1>
+  <p class="muted" style="font-size:12px;margin-bottom:18px">Queries run through SearXNG via your FastAPI backend · dorks auto-generated</p>
+
+  <div class="search-form">
+    <div class="sf-row">
+      <div class="sf-field" style="flex:3">
+        <label class="sf-label">Search query</label>
+        <input class="sf-input" id="sqQuery" type="text" placeholder="e.g. Krakivets checkpoint activity 2026" aria-label="Search query">
+      </div>
+      <div class="sf-field" style="flex:1">
+        <label class="sf-label">Target date (optional)</label>
+        <input class="sf-input" id="sqDate" type="date" aria-label="Target date">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="font-size:12px;color:var(--on-sv)">
+        📍 <span id="coordsLbl">No coordinates — go to Geo tab to add targets</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-o btn-sm" id="clearSearchBtn">Clear</button>
+        <button class="btn btn-p" id="runSearchBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Run search
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error banner -->
+  <div id="searchErr" class="err-banner" style="display:none">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="searchErrMsg">Search failed</span>
+  </div>
+
+  <!-- Dorks panel -->
+  <div id="dorksWrap" style="display:none">
+    <div class="sh"><span class="st">Generated dorks</span><span class="sct" id="dorksCount">0</span></div>
+    <div class="dorks-panel" id="dorksPanel"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsWrap" style="display:none">
+    <div class="sh">
+      <span class="st">Results</span>
+      <span class="sct" id="resultsCount">0</span>
+      <div class="sa">
+        <span class="muted" style="font-size:11px" id="searchDuration"></span>
+      </div>
+    </div>
+    <div class="chips" id="resultFilters">
+      <button class="chip act" data-rf="all">All</button>
+    </div>
+    <div class="feed" id="resultsFeed"></div>
+    <div id="resultsEmpty" class="empty" style="display:none">
+      <div class="empty-icon">📡</div>
+      <div class="empty-label">No results from SearXNG</div>
+      <div class="empty-sub">Try a different query or check SearXNG is running</div>
+    </div>
+  </div>
+
+  <!-- AI Analysis -->
+  <div id="analysisWrap" style="display:none;margin-top:20px">
+    <div class="sh">
+      <span class="st">AI analysis</span>
+      <span style="font-size:11px;color:var(--p);background:rgba(208,188,255,.1);padding:2px 7px;border-radius:4px">Llama 3.3 · Groq</span>
+      <div class="sa">
+        <button class="btn btn-o btn-sm" id="runAnalysisBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Analyze
+        </button>
+      </div>
+    </div>
+    <div class="ai-panel" id="aiPanel">
+      <div class="ai-text muted">Click "Analyze" to run Groq AI analysis on the current query.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ GEO ═══ -->
+<section class="page" id="pg-geo">
+  <h1 style="font-size:22px;font-weight:600;margin-bottom:6px">Geolocation targets</h1>
+  <p class="muted" style="font-size:12px;margin-bottom:16px">Click map to place target circles · drag edge to resize · routes from search history shown automatically</p>
+
+  <div class="map-controls">
+    <button class="btn btn-o btn-sm" id="clearMarkersBtn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      Clear all
+    </button>
+    <button class="btn btn-o btn-sm" id="useInSearchBtn" style="display:none">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Use in search
+    </button>
+    <div class="radius-row">
+      <label for="radiusSlider">Radius:</label>
+      <input type="range" id="radiusSlider" min="100" max="50000" step="100" value="2000">
+      <input type="number" id="radiusNum" min="100" max="50000" step="100" value="2000">
+      <span class="muted">m</span>
+    </div>
+    <span class="muted" style="font-size:11px;margin-left:auto" id="markerCount">0 targets</span>
+  </div>
+
+  <div id="map"></div>
+
+  <div style="margin-top:16px">
+    <div class="sh"><span class="st">Placed targets</span><span class="sct" id="targetTableCount">0</span></div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="target-table" id="targetTable">
+        <thead><tr><th>ID</th><th>Lat</th><th>Lng</th><th>Radius (m)</th><th>Label</th><th>Action</th></tr></thead>
+        <tbody id="targetBody"></tbody>
+      </table>
+      <div id="targetEmpty" class="empty" style="padding:24px">
+        <div class="empty-icon" style="font-size:32px">📍</div>
+        <div class="empty-label">Click the map to place targets</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Routes from history -->
+  <div style="margin-top:16px" id="routesSection" style="display:none">
+    <div class="sh"><span class="st">Routes from searches</span><span class="sct" id="routeCount">0</span></div>
+    <div id="routeList" style="display:flex;flex-direction:column;gap:7px"></div>
+  </div>
+</section>
+
+<!-- ═══ GRAPH ═══ -->
+<section class="page" id="pg-graph">
+  <h1 style="font-size:22px;font-weight:600;margin-bottom:6px">Entity graph</h1>
+  <p class="muted" style="font-size:12px;margin-bottom:16px">Network built from search results · entities extracted by backend · click nodes to inspect</p>
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
+    <canvas id="gcanvas" aria-label="Entity relationship graph" role="img"></canvas>
+  </div>
+  <div id="graphEmpty" class="empty">
+    <div class="empty-icon">🔗</div>
+    <div class="empty-label">No entities yet</div>
+    <div class="empty-sub">Run a search to populate the entity graph from real results</div>
+  </div>
+  <div id="nodeDetail" style="display:none">
+    <div class="sh" style="margin-top:12px"><span class="st">Selected entity</span></div>
+    <div class="detail-panel" id="nodeDetailContent"></div>
+  </div>
+</section>
+
+<!-- ═══ HISTORY ═══ -->
+<section class="page" id="pg-history">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+    <div>
+      <h1 style="font-size:22px;font-weight:600">History & details</h1>
+      <p class="muted" style="font-size:12px;margin-top:3px">All past searches from SQLite · click to expand</p>
+    </div>
+    <button class="btn btn-o btn-sm" id="refreshHistBtn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9"/><path d="M21 12a9 9 0 0 1-9 9"/><polyline points="21 3 21 9 15 9"/><polyline points="3 21 3 15 9 15"/></svg>
+      Refresh
+    </button>
+  </div>
+  <div id="histList"></div>
+  <div id="histEmpty" class="empty" style="display:none">
+    <div class="empty-icon">📋</div>
+    <div class="empty-label">No searches yet</div>
+    <div class="empty-sub">Run your first search to see history here</div>
+  </div>
+
+  <!-- Detail drawer -->
+  <div id="histDetail" style="display:none;margin-top:18px">
+    <div class="sh"><span class="st" id="histDetailTitle">Search details</span></div>
+    <div class="two">
+      <div>
+        <div class="detail-panel" id="histDetailMeta" style="margin-bottom:14px"></div>
+        <div class="sh"><span class="st">Results</span><span class="sct" id="histDetailCount">0</span></div>
+        <div class="feed" id="histDetailFeed"></div>
+      </div>
+      <div>
+        <div class="sh"><span class="st">Dorks used</span></div>
+        <div class="dorks-panel" id="histDetailDorks"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SETTINGS ═══ -->
+<section class="page" id="pg-settings">
+  <h1 style="font-size:22px;font-weight:600;margin-bottom:6px">Settings</h1>
+  <p class="muted" style="font-size:12px;margin-bottom:22px">Customize OSINTRadar · changes saved to localStorage</p>
+  <div style="max-width:560px">
+    <div class="sg">
+      <div class="sgt">Appearance</div>
+      <div class="srow">
+        <div><div class="slabel">Dark theme</div><div class="sdesc">Recommended for extended monitoring sessions</div></div>
+        <div class="toggle on" id="darkToggle" onclick="toggleTheme()"></div>
+      </div>
+      <div class="srow">
+        <div><div class="slabel">Accent color</div><div class="sdesc">Primary highlight color throughout the UI</div></div>
+        <div class="swatches">
+          <div class="swatch act" style="background:#D0BCFF" data-c="#D0BCFF" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#80DEEA" data-c="#80DEEA" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#A5D6A7" data-c="#A5D6A7" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#F48FB1" data-c="#F48FB1" onclick="setAccent(this)"></div>
+          <div class="swatch" style="background:#FFCC80" data-c="#FFCC80" onclick="setAccent(this)"></div>
+        </div>
+      </div>
+    </div>
+    <div class="sg">
+      <div class="sgt">Backend</div>
+      <div class="srow">
+        <div><div class="slabel">API base URL</div><div class="sdesc">Where your FastAPI backend is running</div></div>
+        <input class="sf-input" id="apiBaseInput" value="http://127.0.0.1:8000" style="width:200px;font-size:12px">
+      </div>
+      <div class="srow">
+        <div><div class="slabel">Auto-refresh stats</div><div class="sdesc">Refresh dashboard stats every 60 seconds</div></div>
+        <div class="toggle on" id="autoRefreshToggle" onclick="this.classList.toggle('on');toast('Setting saved','info')"></div>
+      </div>
+    </div>
+    <div class="sg">
+      <div class="sgt">Search</div>
+      <div class="srow">
+        <div><div class="slabel">Max results displayed</div><div class="sdesc">Limit results per search (backend caps at 20)</div></div>
+        <select class="sf-input" id="maxResults" style="width:80px;font-size:12px">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" onclick="saveSettings()">Save settings</button>
+      <button class="btn btn-o" onclick="resetSettings()">Reset defaults</button>
+    </div>
+  </div>
+
+  <footer>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="logo" style="width:26px;height:26px;font-size:12px">OI</div>
+      <span class="fbrand">OSINTRadar</span>
+      <span class="muted">· Border Sentinel · 2026</span>
+    </div>
+    <div class="flinks">
+      <a href="https://linkedin.com/in/alexander-mints" class="flink" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+        LinkedIn
+      </a>
+      <a href="https://github.com/mintosintdev" class="flink" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        GitHub
+      </a>
+    </div>
+    <div style="margin-left:auto;text-align:right">
+      <div style="font-size:13px;font-weight:500;color:var(--on-s)">Alexander Mints</div>
+      <div style="font-size:11px;color:var(--on-sv)">OSINT Engineer · AI Developer</div>
+    </div>
+  </footer>
+</section>
+
+</main>
+
+<!-- EXPORT MODAL -->
+<div class="modal-bg" id="exportModal">
+  <div class="modal">
+    <h3>Export intelligence data</h3>
+    <p>Download current session data in your preferred format.</p>
+    <label class="export-opt"><input type="radio" name="ef" value="json" checked style="accent-color:var(--p)"> <div><div style="font-size:13px;color:var(--on-s)">JSON</div><div style="font-size:11px;color:var(--on-sv)">Structured · ideal for re-import</div></div></label>
+    <label class="export-opt"><input type="radio" name="ef" value="csv" style="accent-color:var(--p)"> <div><div style="font-size:13px;color:var(--on-s)">CSV</div><div style="font-size:11px;color:var(--on-sv)">Spreadsheet-compatible</div></div></label>
+    <label class="export-opt"><input type="radio" name="ef" value="txt" style="accent-color:var(--p)"> <div><div style="font-size:13px;color:var(--on-s)">Plain text report</div><div style="font-size:11px;color:var(--on-sv)">Human-readable briefing</div></div></label>
+    <div class="macts" style="margin-top:16px">
+      <button class="btn btn-o" onclick="closeModal('exportModal')">Cancel</button>
+      <button class="btn btn-p" onclick="doExport()">Download</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="tc" id="tc" aria-live="polite"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+let API = localStorage.getItem('osint_api') || 'http://127.0.0.1:8000';
+let darkMode = localStorage.getItem('osint_dark') !== 'false';
+let accentColor = localStorage.getItem('osint_accent') || '#D0BCFF';
+
+// ── App State ────────────────────────────────────────────────────────────────
+let currentPage = 'dashboard';
+let sessionResults = []; // results from last search
+let sessionSearch = null; // last search response
+let graphEntities = []; // entities for graph
+let markers = [];  // leaflet markers
+let circles = [];  // leaflet circles
+let mapRoutes = []; // polylines
+let mapInst = null;
+let targetIdCounter = 1;
+let historyData = [];
+let statsData = {};
+let isOnline = false;
+let searchCoords = []; // coords to attach to next search
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  applyTheme();
+  applyAccent();
+  setupNav();
+  setupSearch();
+  setupKbd();
+  setupScroll();
+  checkBackend();
+  loadDashboard();
+  setInterval(() => {
+    if (document.getElementById('autoRefreshToggle').classList.contains('on')) loadStats();
+  }, 60000);
+});
+
+// ── API helpers ──────────────────────────────────────────────────────────────
+async function apiFetch(path, opts={}) {
+  const base = document.getElementById('apiBaseInput')?.value || API;
+  const res = await fetch(base + path, {
+    headers: {'Content-Type':'application/json'},
+    ...opts
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+async function checkBackend() {
+  const pill = document.getElementById('statusPill');
+  const txt = document.getElementById('statusText');
+  try {
+    await apiFetch('/api/stats');
+    pill.className = 'status-pill online';
+    txt.textContent = 'Backend online';
+    isOnline = true;
+    document.getElementById('notifBadge').style.display = 'none';
+  } catch {
+    pill.className = 'status-pill offline';
+    txt.textContent = 'Backend offline';
+    isOnline = false;
+    document.getElementById('notifBadge').style.display = 'block';
+  }
+  setTimeout(checkBackend, 15000);
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  await loadStats();
+  await loadRecentHistory();
+}
+
+async function loadStats() {
+  try {
+    const data = await apiFetch('/api/stats');
+    statsData = data;
+    renderStats(data);
+    document.getElementById('lastRefreshLbl').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    document.getElementById('statsGrid').innerHTML = `<div class="err-banner" style="grid-column:1/-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Cannot reach backend — start FastAPI first</div>`;
+  }
+}
+
+function renderStats(d) {
+  const icons = [
+    ['Total searches','search',d.total_searches||0,'#D0BCFF','+today'],
+    ['Results found','file',d.total_results||0,'#86EFAC','from SearXNG'],
+    ['Unique sources','globe',d.unique_sources||0,'#93C5FD','domains'],
+    ['Last search','clock',d.last_search_time||'—','#FCD34D',''],
+  ];
+  const svgs = {
+    search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>',
+    file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+    globe:'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  };
+  const colors = {search:'var(--p-c)',file:'rgba(134,239,172,.15)',globe:'rgba(147,197,253,.15)',clock:'rgba(252,211,77,.12)'};
+  const tclrs = {search:'var(--on-pc)',file:'var(--ok)',globe:'var(--info)',clock:'var(--warn)'};
+  document.getElementById('statsGrid').innerHTML = icons.map(([lbl,ico,val,c,sub]) => `
+    <div class="sc2">
+      <div class="sico" style="background:${colors[ico]};color:${tclrs[ico]}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svgs[ico]}</svg>
+      </div>
+      <div class="slbl">${lbl}</div>
+      <div class="sval">${typeof val==='number'?val.toLocaleString():val}</div>
+      ${sub?`<div class="sdelta">${sub}</div>`:''}
+    </div>`).join('');
+}
+
+async function loadRecentHistory() {
+  try {
+    const data = await apiFetch('/api/history');
+    historyData = data;
+    const feed = document.getElementById('dashFeed');
+    const count = document.getElementById('recentCount');
+    count.textContent = data.length;
+    if (!data.length) {
+      feed.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><div class="empty-label">No searches yet</div><div class="empty-sub">Run your first search to see results here</div></div>`;
+      return;
+    }
+    feed.innerHTML = data.slice(0,5).map(h => `
+      <div class="fi" onclick="openHistDetail('${h.id}');showPage('history')" tabindex="0">
+        <div class="fi-title">${escHtml(h.query)}</div>
+        <div class="fi-meta">
+          <span class="tag-src">${h.total_results||0} results</span>
+          ${h.target_date?`<span class="tag-src">📅 ${h.target_date}</span>`:''}
+          <span class="ts">${fmtTime(h.timestamp)}</span>
+        </div>
+      </div>`).join('');
+  } catch {
+    document.getElementById('dashFeed').innerHTML = `<div class="err-banner"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>History unavailable</div>`;
+  }
+}
+
+document.getElementById('refreshDash').addEventListener('click', async () => {
+  const btn = document.getElementById('refreshDash');
+  btn.disabled = true;
+  await loadDashboard();
+  btn.disabled = false;
+  toast('Dashboard refreshed', 'success');
+});
+
+// ── Search ───────────────────────────────────────────────────────────────────
+document.getElementById('runSearchBtn').addEventListener('click', runSearch);
+document.getElementById('sqQuery').addEventListener('keydown', e => { if(e.key==='Enter') runSearch(); });
+document.getElementById('clearSearchBtn').addEventListener('click', () => {
+  document.getElementById('sqQuery').value='';
+  document.getElementById('sqDate').value='';
+  document.getElementById('dorksWrap').style.display='none';
+  document.getElementById('resultsWrap').style.display='none';
+  document.getElementById('analysisWrap').style.display='none';
+  document.getElementById('searchErr').style.display='none';
+  sessionResults=[];
+});
+
+async function runSearch() {
+  const q = document.getElementById('sqQuery').value.trim();
+  if (!q) { toast('Enter a search query first','error'); return; }
+  const btn = document.getElementById('runSearchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Searching…';
+  document.getElementById('searchErr').style.display='none';
+  document.getElementById('dorksWrap').style.display='none';
+  document.getElementById('resultsWrap').style.display='none';
+  document.getElementById('analysisWrap').style.display='none';
+
+  try {
+    const body = { query: q };
+    const d = document.getElementById('sqDate').value;
+    if (d) body.target_date = d;
+    if (searchCoords.length) body.coordinates = searchCoords;
+
+    const data = await apiFetch('/api/search', { method:'POST', body: JSON.stringify(body) });
+    sessionSearch = data;
+    sessionResults = data.results || [];
+
+    // Dorks
+    if (data.dorks?.length) {
+      document.getElementById('dorksWrap').style.display='block';
+      document.getElementById('dorksCount').textContent = data.dorks.length;
+      document.getElementById('dorksPanel').innerHTML = data.dorks.map(dk => `
+        <div class="dork-item">
+          <span style="flex:1">${escHtml(dk)}</span>
+          <span class="dork-copy" onclick="copyText('${escHtml(dk).replace(/'/g,"\\'")}',this)" title="Copy dork">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </span>
+        </div>`).join('');
+    }
+
+    // Results
+    document.getElementById('resultsWrap').style.display='block';
+    document.getElementById('resultsCount').textContent = sessionResults.length;
+    document.getElementById('searchDuration').textContent = `${data.duration}s · ${data.total_results} unique`;
+    renderResultsFeed(sessionResults);
+
+    // Graph
+    if (data.entities?.length) {
+      graphEntities = data.entities;
+      drawGraph();
+      document.getElementById('graphEmpty').style.display='none';
+    }
+
+    // Analysis panel visible
+    document.getElementById('analysisWrap').style.display='block';
+
+    // Draw coords on map if any
+    if (data.coordinates?.length) {
+      data.coordinates.forEach(c => addMapRoute([c], q));
+    }
+
+    toast(`Search complete · ${sessionResults.length} results`, 'success');
+    loadStats();
+    loadHistory();
+  } catch(e) {
+    document.getElementById('searchErr').style.display='flex';
+    document.getElementById('searchErrMsg').textContent = 'Search failed: ' + e.message;
+    toast('Search failed — is backend running?','error');
+  } finally {
+    btn.disabled=false;
+    btn.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Run search`;
+  }
+}
+
+function renderResultsFeed(items) {
+  const feed = document.getElementById('resultsFeed');
+  const empty = document.getElementById('resultsEmpty');
+  if (!items.length) { feed.innerHTML=''; empty.style.display='flex'; return; }
+  empty.style.display='none';
+  feed.innerHTML = items.map((r,i) => {
+    const priority = i < 2 ? 'high' : i < 5 ? 'medium' : 'low';
+    const domain = (() => { try { return new URL(r.url).hostname; } catch { return 'unknown'; } })();
+    return `<div class="fi ${priority}" onclick="window.open('${escHtml(r.url)}','_blank')" tabindex="0" role="article">
+      <div class="fi-title">${escHtml(r.title||'Untitled')}</div>
+      <div class="fi-url">${escHtml(r.url||'')}</div>
+      ${r.content?`<div class="fi-snip">${escHtml(r.content.slice(0,180))}…</div>`:''}
+      <div class="fi-meta">
+        <span class="tag tag-${priority}">${priority.toUpperCase()}</span>
+        <span class="tag-src">${escHtml(domain)}</span>
+        <span class="ts" style="margin-left:auto">Result ${i+1}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── AI Analysis ──────────────────────────────────────────────────────────────
+document.getElementById('runAnalysisBtn').addEventListener('click', async () => {
+  const q = document.getElementById('sqQuery').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('runAnalysisBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Analyzing…';
+  const panel = document.getElementById('aiPanel');
+  panel.innerHTML = '<div class="ai-text ai-typing muted">Groq AI is analyzing your query…</div>';
+  try {
+    const data = await apiFetch('/api/analyze', { method:'POST', body: JSON.stringify({query:q}) });
+    const text = formatAnalysis(data);
+    typewrite(panel, text);
+  } catch(e) {
+    panel.innerHTML = `<div class="err-banner">Analysis failed: ${escHtml(e.message)}</div>`;
+  } finally {
+    btn.disabled=false; btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Analyze`;
+  }
+});
+
+function formatAnalysis(d) {
+  let out = '';
+  if (d.summary) out += '📊 SUMMARY\n' + d.summary + '\n\n';
+  if (d.suggested_queries?.length) out += '🔍 SUGGESTED QUERIES\n' + d.suggested_queries.map((q,i)=>`${i+1}. ${q}`).join('\n') + '\n\n';
+  if (d.entities_to_watch?.length) out += '👁 ENTITIES TO WATCH\n' + d.entities_to_watch.map(e=>`• ${e}`).join('\n');
+  return out.trim() || JSON.stringify(d, null, 2);
+}
+
+function typewrite(el, text) {
+  el.innerHTML = '<div class="ai-text ai-typing"></div>';
+  const span = el.querySelector('.ai-text');
+  let i = 0;
+  const iv = setInterval(() => {
+    span.textContent = text.slice(0, i++);
+    if (i > text.length) { clearInterval(iv); span.classList.remove('ai-typing'); }
+  }, 10);
+}
+
+// ── Geo / Map ────────────────────────────────────────────────────────────────
+function initMap() {
+  if (mapInst) return;
+  mapInst = L.map('map').setView([49.84, 24.03], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap',
+    maxZoom:19
+  }).addTo(mapInst);
+
+  mapInst.on('click', onMapClick);
+
+  // Sync radius inputs
+  const slider = document.getElementById('radiusSlider');
+  const num = document.getElementById('radiusNum');
+  slider.addEventListener('input', () => { num.value = slider.value; });
+  num.addEventListener('input', () => { slider.value = num.value; });
+}
+
+function getRadius() { return parseInt(document.getElementById('radiusSlider').value) || 2000; }
+
+function onMapClick(e) {
+  const { lat, lng } = e.latlng;
+  const r = getRadius();
+  const id = 'T' + (targetIdCounter++).toString().padStart(2,'0');
+
+  const marker = L.marker([lat, lng], {
+    title: id,
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="width:12px;height:12px;border-radius:50%;background:#D0BCFF;border:2px solid #fff;box-shadow:0 0 8px rgba(208,188,255,.5)"></div>`,
+      iconSize:[12,12], iconAnchor:[6,6]
+    })
+  }).addTo(mapInst).bindPopup(popupContent(id, lat, lng, r));
+
+  const circle = L.circle([lat, lng], {
+    radius: r,
+    color: '#D0BCFF',
+    fillColor: '#D0BCFF',
+    fillOpacity: 0.08,
+    weight: 1.5,
+    dashArray: '5,5'
+  }).addTo(mapInst);
+
+  // Make circle resizable by dragging its edge
+  circle.on('click', (ev) => {
+    L.DomEvent.stopPropagation(ev);
+    startResize(circle, marker, id);
+  });
+
+  const obj = { id, marker, circle, lat, lng, radius: r };
+  markers.push(obj);
+  circles.push(circle);
+  searchCoords = markers.map(m => ({lat: m.lat, lng: m.lng}));
+  updateTargetTable();
+  updateCoordsLbl();
+  toast(`Target ${id} placed · radius ${r}m`, 'info');
+}
+
+function startResize(circle, marker, id) {
+  const tgt = markers.find(m => m.id === id);
+  if (!tgt) return;
+  const newR = parseInt(prompt(`Set radius for ${id} (meters):`, tgt.radius));
+  if (!isNaN(newR) && newR > 0) {
+    circle.setRadius(newR);
+    tgt.radius = newR;
+    marker.setPopupContent(popupContent(id, tgt.lat, tgt.lng, newR));
+    updateTargetTable();
+    toast(`${id} radius → ${newR}m`, 'info');
+  }
+}
+
+function popupContent(id, lat, lng, r) {
+  return `<div style="font-size:12px;color:var(--on-s)"><b style="color:var(--p)">${id}</b><br>Lat: ${lat.toFixed(5)}<br>Lng: ${lng.toFixed(5)}<br>Radius: ${r}m<br><a href="#" onclick="removeTarget('${id}');return false" style="color:var(--err);font-size:11px">Remove</a></div>`;
+}
+
+function removeTarget(id) {
+  const idx = markers.findIndex(m => m.id === id);
+  if (idx === -1) return;
+  mapInst.removeLayer(markers[idx].marker);
+  mapInst.removeLayer(markers[idx].circle);
+  markers.splice(idx, 1);
+  circles.splice(idx, 1);
+  searchCoords = markers.map(m => ({lat: m.lat, lng: m.lng}));
+  updateTargetTable();
+  updateCoordsLbl();
+  toast(`Target ${id} removed`, 'info');
+}
+
+function updateTargetTable() {
+  const tbody = document.getElementById('targetBody');
+  const empty = document.getElementById('targetEmpty');
+  const count = document.getElementById('targetTableCount');
+  const mc = document.getElementById('markerCount');
+  const useBtn = document.getElementById('useInSearchBtn');
+  count.textContent = markers.length;
+  mc.textContent = markers.length + ' target' + (markers.length!==1?'s':'');
+  useBtn.style.display = markers.length ? 'flex' : 'none';
+  if (!markers.length) { tbody.innerHTML=''; empty.style.display='flex'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = markers.map(m => `
+    <tr>
+      <td><b style="color:var(--p)">${m.id}</b></td>
+      <td>${m.lat.toFixed(5)}</td>
+      <td>${m.lng.toFixed(5)}</td>
+      <td>
+        <input type="number" value="${m.radius}" min="100" max="100000" step="100"
+          style="width:70px;background:var(--s3);border:1px solid var(--out-v);border-radius:5px;padding:3px 6px;color:var(--on-s);font-size:11px"
+          onchange="updateRadius('${m.id}',this.value)">
+      </td>
+      <td><input type="text" placeholder="Label…" style="width:90px;background:transparent;border:none;color:var(--on-s);font-size:11px;outline:none" onchange="updateLabel('${m.id}',this.value)"></td>
+      <td><button class="btn btn-o btn-sm" style="font-size:10px;padding:3px 8px" onclick="removeTarget('${m.id}')">Remove</button></td>
+    </tr>`).join('');
+}
+
+function updateRadius(id, val) {
+  const r = parseInt(val);
+  if (isNaN(r) || r <= 0) return;
+  const tgt = markers.find(m => m.id === id);
+  if (!tgt) return;
+  tgt.radius = r;
+  tgt.circle.setRadius(r);
+}
+function updateLabel(id, val) {
+  const tgt = markers.find(m => m.id === id);
+  if (!tgt) return;
+  tgt.label = val;
+}
+
+function updateCoordsLbl() {
+  const lbl = document.getElementById('coordsLbl');
+  if (!markers.length) { lbl.textContent = 'No coordinates — go to Geo tab to add targets'; return; }
+  lbl.textContent = markers.length + ' target(s) attached to next search';
+}
+
+document.getElementById('clearMarkersBtn').addEventListener('click', () => {
+  markers.forEach(m => { mapInst.removeLayer(m.marker); mapInst.removeLayer(m.circle); });
+  markers=[]; circles=[]; searchCoords=[];
+  updateTargetTable(); updateCoordsLbl();
+  toast('All targets cleared', 'info');
+});
+
+document.getElementById('useInSearchBtn').addEventListener('click', () => {
+  showPage('search');
+  toast(markers.length + ' coordinate(s) attached to next search', 'info');
+});
+
+function addMapRoute(coords, label) {
+  if (!mapInst || coords.length < 2) return;
+  const latlngs = coords.map(c => [c.lat, c.lng]);
+  const line = L.polyline(latlngs, {
+    color: '#93C5FD',
+    weight: 3,
+    opacity: 0.7,
+    dashArray: '8,4'
+  }).addTo(mapInst).bindPopup(`<b>Route</b><br>${escHtml(label)}`);
+  mapRoutes.push({ line, label });
+  renderRouteList();
+}
+
+function renderRouteList() {
+  const sec = document.getElementById('routesSection');
+  const list = document.getElementById('routeList');
+  const count = document.getElementById('routeCount');
+  sec.style.display = mapRoutes.length ? 'block' : 'none';
+  count.textContent = mapRoutes.length;
+  list.innerHTML = mapRoutes.map((r,i) => `
+    <div class="hist-item">
+      <span class="hist-icon">🛤️</span>
+      <span class="hist-text">${escHtml(r.label)}</span>
+      <button class="btn btn-o btn-sm" onclick="removeRoute(${i})">Remove</button>
+    </div>`).join('');
+}
+
+function removeRoute(i) {
+  if (mapInst) mapInst.removeLayer(mapRoutes[i].line);
+  mapRoutes.splice(i,1);
+  renderRouteList();
+}
+
+// ── Entity Graph ──────────────────────────────────────────────────────────────
+function drawGraph() {
+  const canvas = document.getElementById('gcanvas');
+  const W = canvas.offsetWidth || 700;
+  const H = 360;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  if (!graphEntities.length) return;
+
+  const n = graphEntities.length;
+  const cx = W/2, cy = H/2;
+  const R = Math.min(W,H)*0.33;
+
+  // Position nodes in a circle around center
+  const positions = graphEntities.map((e,i) => {
+    const angle = (2*Math.PI*i/n) - Math.PI/2;
+    return { x: cx + R*Math.cos(angle), y: cy + R*Math.sin(angle) };
+  });
+  // Central hub (first entity)
+  positions[0] = {x:cx, y:cy};
+
+  // Edges (hub to all)
+  graphEntities.forEach((e,i) => {
+    if (i===0) return;
+    ctx.beginPath();
+    ctx.moveTo(positions[0].x, positions[0].y);
+    ctx.lineTo(positions[i].x, positions[i].y);
+    ctx.strokeStyle = 'rgba(208,188,255,.12)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  });
+
+  // Nodes
+  graphEntities.forEach((e,i) => {
+    const {x,y} = positions[i];
+    const r = i===0 ? 22 : 14;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle = e.color || '#D0BCFF';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(208,188,255,.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#1C1B1F';
+    ctx.font = `${i===0?10:9}px 'Segoe UI',sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    const label = (e.name||'entity').slice(0,20);
+    ctx.fillText(label, x, y);
+
+    // Below label
+    if (i!==0) {
+      ctx.fillStyle = 'rgba(206,225,240,.5)';
+      ctx.font='9px sans-serif';
+      ctx.fillText(e.type||'', x, y+r+8);
+    }
+  });
+
+  // Click to inspect
+  canvas.onclick = (ev) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = ev.clientX - rect.left;
+    const my = ev.clientY - rect.top;
+    graphEntities.forEach((e,i) => {
+      const {x,y} = positions[i];
+      const r = i===0?22:14;
+      if (Math.hypot(mx-x,my-y) < r) showNodeDetail(e);
+    });
+  };
+  canvas.style.cursor='pointer';
+}
+
+function showNodeDetail(e) {
+  document.getElementById('nodeDetail').style.display='block';
+  document.getElementById('nodeDetailContent').innerHTML = `
+    <div class="detail-row"><span class="detail-key">Name</span><span class="detail-val">${escHtml(e.name||'—')}</span></div>
+    <div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">${escHtml(e.type||'—')}</span></div>
+    <div class="detail-row"><span class="detail-key">Related</span><span class="detail-val">${e.related_to?.join(', ')||'none'}</span></div>`;
+}
+
+// ── History ──────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  try {
+    const data = await apiFetch('/api/history');
+    historyData = data;
+    renderHistory(data);
+  } catch {
+    document.getElementById('histList').innerHTML = `<div class="err-banner"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Cannot load history</div>`;
+  }
+}
+
+function renderHistory(data) {
+  const list = document.getElementById('histList');
+  const empty = document.getElementById('histEmpty');
+  if (!data.length) { list.innerHTML=''; empty.style.display='flex'; return; }
+  empty.style.display='none';
+  list.innerHTML = data.map(h => `
+    <div class="hist-item" onclick="openHistDetail('${h.id}')" tabindex="0" role="button">
+      <span class="hist-icon">🔍</span>
+      <div style="flex:1">
+        <div class="hist-text">${escHtml(h.query)}</div>
+        <div class="hist-sub">${fmtTime(h.timestamp)} ${h.target_date?'· 📅 '+h.target_date:''}</div>
+      </div>
+      <span class="hist-badge">${h.total_results||0} results</span>
+    </div>`).join('');
+}
+
+async function openHistDetail(id) {
+  document.getElementById('histDetail').style.display='block';
+  document.getElementById('histDetailTitle').textContent='Loading…';
+  try {
+    const d = await apiFetch('/api/search/' + id);
+    document.getElementById('histDetailTitle').textContent=escHtml(d.query);
+    document.getElementById('histDetailCount').textContent=d.results?.length||0;
+    document.getElementById('histDetailMeta').innerHTML=`
+      <div class="detail-row"><span class="detail-key">Search ID</span><span class="detail-val">${d.id}</span></div>
+      <div class="detail-row"><span class="detail-key">Timestamp</span><span class="detail-val">${fmtTime(d.timestamp)}</span></div>
+      <div class="detail-row"><span class="detail-key">Duration</span><span class="detail-val">${d.duration}s</span></div>
+      <div class="detail-row"><span class="detail-key">Results</span><span class="detail-val">${d.total_results}</span></div>
+      ${d.target_date?`<div class="detail-row"><span class="detail-key">Target date</span><span class="detail-val">${d.target_date}</span></div>`:''}
+      ${d.coordinates?.length?`<div class="detail-row"><span class="detail-key">Coordinates</span><span class="detail-val" style="color:var(--p);cursor:pointer" onclick="loadCoordsOnMap(${JSON.stringify(d.coordinates).replace(/"/g,'&quot;')})">View ${d.coordinates.length} on map</span></div>`:''}`;
+    // Dorks
+    document.getElementById('histDetailDorks').innerHTML = (d.dorks||[]).map(dk=>`
+      <div class="dork-item"><span style="flex:1">${escHtml(dk)}</span><span class="dork-copy" onclick="copyText('${escHtml(dk).replace(/'/g,"\\'")}',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span></div>`).join('');
+    // Results feed
+    const feed = document.getElementById('histDetailFeed');
+    feed.innerHTML = (d.results||[]).map((r,i)=>`
+      <div class="fi ${i<2?'high':i<5?'medium':'low'}" onclick="window.open('${escHtml(r.url)}','_blank')" tabindex="0">
+        <div class="fi-title">${escHtml(r.title||'Untitled')}</div>
+        <div class="fi-url">${escHtml(r.url||'')}</div>
+        ${r.content?`<div class="fi-snip">${escHtml(r.content.slice(0,140))}…</div>`:''}
+      </div>`).join('');
+    // If coords, load on map
+    if (d.coordinates?.length > 1) addMapRoute(d.coordinates, d.query);
+  } catch(e) {
+    document.getElementById('histDetailTitle').textContent='Error loading details';
+  }
+}
+
+function loadCoordsOnMap(coords) {
+  showPage('geo');
+  if (!mapInst) { setTimeout(()=>loadCoordsOnMap(coords), 400); return; }
+  coords.forEach(c => mapInst.setView([c.lat,c.lng],10));
+}
+
+document.getElementById('refreshHistBtn').addEventListener('click', async () => {
+  await loadHistory();
+  toast('History refreshed','info');
+});
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+function setupNav() {
+  document.querySelectorAll('.ni[data-page]').forEach(btn => {
+    btn.addEventListener('click', () => showPage(btn.dataset.page));
+  });
+}
+
+function showPage(pg) {
+  currentPage = pg;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('act'));
+  document.querySelectorAll('.ni').forEach(b => b.classList.remove('act'));
+  const el = document.getElementById('pg-'+pg);
+  if (el) el.classList.add('act');
+  const nb = document.querySelector(`.ni[data-page="${pg}"]`);
+  if (nb) nb.classList.add('act');
+
+  // Lazy-init map
+  if (pg==='geo' && !mapInst) {
+    setTimeout(initMap, 60);
+  }
+  // Load history on nav
+  if (pg==='history') loadHistory();
+  // Resize graph
+  if (pg==='graph' && graphEntities.length) setTimeout(drawGraph, 60);
+}
+
+// ── Global Search ─────────────────────────────────────────────────────────────
+function setupSearch() {
+  const inp = document.getElementById('gSearch');
+  const clr = document.getElementById('sClear');
+  inp.addEventListener('input', () => {
+    clr.classList.toggle('v', inp.value.length > 0);
+  });
+  clr.addEventListener('click', () => { inp.value=''; clr.classList.remove('v'); });
+  inp.addEventListener('keydown', e => {
+    if (e.key==='Enter' && inp.value.trim()) {
+      document.getElementById('sqQuery').value = inp.value.trim();
+      showPage('search');
+      toast('Query set — click Run search','info');
+    }
+  });
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+function setupKbd() {
+  document.addEventListener('keydown', e => {
+    const tag = document.activeElement.tagName;
+    if (tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
+    if (e.key=='/'){e.preventDefault();document.getElementById('gSearch').focus();}
+    if (e.key==='1') showPage('dashboard');
+    if (e.key==='2') showPage('search');
+    if (e.key==='3') showPage('geo');
+    if (e.key==='4') showPage('graph');
+    if (e.key==='5') showPage('history');
+    if (e.key==='e'||e.key==='E') document.getElementById('exportModal').classList.add('open');
+    if (e.key==='s'||e.key==='S') showPage('settings');
+    if (e.key==='Escape'){document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));document.getElementById('gSearch').blur();}
+  });
+}
+
+function setupScroll() {
+  window.addEventListener('scroll', () => {
+    document.getElementById('bar').classList.toggle('up', window.scrollY > 2);
+  });
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+document.getElementById('exportBtn').addEventListener('click', () => document.getElementById('exportModal').classList.add('open'));
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.getElementById('exportModal').addEventListener('click', e => { if (e.target===document.getElementById('exportModal')) closeModal('exportModal'); });
+
+function doExport() {
+  const fmt = document.querySelector('input[name="ef"]:checked').value;
+  const ts = new Date().toISOString();
+  let content, mime, ext;
+  if (fmt==='json') {
+    content = JSON.stringify({exported:ts, stats:statsData, results:sessionResults, entities:graphEntities, targets:markers.map(m=>({id:m.id,lat:m.lat,lng:m.lng,radius:m.radius}))},null,2);
+    mime='application/json'; ext='json';
+  } else if (fmt==='csv') {
+    const rows=[['Title','URL','Content'],...sessionResults.map(r=>[`"${(r.title||'').replace(/"/g,'""')}"`,`"${r.url||''}"`,`"${(r.content||'').slice(0,200).replace(/"/g,'""')}"`])];
+    content=rows.map(r=>r.join(',')).join('\n'); mime='text/csv'; ext='csv';
+  } else {
+    content=`OSINT RADAR INTELLIGENCE REPORT\n${ts}\n${'='.repeat(50)}\n\nSTATS\nSearches: ${statsData.total_searches||0}\nResults: ${statsData.total_results||0}\nSources: ${statsData.unique_sources||0}\n\n${'='.repeat(50)}\nRESULTS (${sessionResults.length})\n\n`+sessionResults.map((r,i)=>`${i+1}. ${r.title||'Untitled'}\n   ${r.url}\n   ${r.content?.slice(0,200)||''}\n`).join('\n');
+    mime='text/plain'; ext='txt';
+  }
+  const blob=new Blob([content],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='osint-radar-'+Date.now()+'.'+ext; a.click(); URL.revokeObjectURL(url);
+  closeModal('exportModal');
+  toast('Exported as '+ext.toUpperCase(),'success');
+}
+
+// ── Theme & Accent ────────────────────────────────────────────────────────────
+function applyTheme() {
+  if (!darkMode) document.body.classList.add('light');
+  document.getElementById('darkToggle').classList.toggle('on', darkMode);
+}
+function applyAccent() {
+  document.documentElement.style.setProperty('--p', accentColor);
+  document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('act', s.dataset.c===accentColor));
+}
+function toggleTheme() {
+  darkMode = !darkMode;
+  document.body.classList.toggle('light', !darkMode);
+  document.getElementById('darkToggle').classList.toggle('on', darkMode);
+  const ico = document.getElementById('themeIco');
+  ico.innerHTML = darkMode
+    ? '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>'
+    : '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+  toast(darkMode?'Dark theme':'Light theme','info');
+}
+function setAccent(el) {
+  accentColor = el.dataset.c;
+  applyAccent();
+  toast('Accent color updated','success');
+}
+
+document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+
+// ── Settings Save ─────────────────────────────────────────────────────────────
+function saveSettings() {
+  localStorage.setItem('osint_dark', darkMode);
+  localStorage.setItem('osint_accent', accentColor);
+  localStorage.setItem('osint_api', document.getElementById('apiBaseInput').value);
+  API = document.getElementById('apiBaseInput').value;
+  toast('Settings saved','success');
+}
+function resetSettings() {
+  darkMode=true; accentColor='#D0BCFF';
+  applyTheme(); applyAccent();
+  document.getElementById('apiBaseInput').value='http://127.0.0.1:8000';
+  toast('Reset to defaults','info');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const icons={success:'✅',error:'❌',info:'ℹ️'};
+  const el=document.createElement('div');
+  el.className='toast';
+  el.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span>${escHtml(msg)}</span>`;
+  document.getElementById('tc').appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),220);},3200);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const diff = Date.now()-d;
+  if (diff<60000) return 'just now';
+  if (diff<3600000) return Math.floor(diff/60000)+'m ago';
+  if (diff<86400000) return Math.floor(diff/3600000)+'h ago';
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+function copyText(txt, btn) {
+  navigator.clipboard.writeText(txt).then(()=>{
+    const orig=btn.innerHTML;
+    btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    setTimeout(()=>btn.innerHTML=orig, 1200);
+    toast('Copied!','success');
+  });
+}
+
+window.addEventListener('resize', ()=>{ if(currentPage==='graph'&&graphEntities.length) drawGraph(); });
+</script>
+</body>
+</html>
