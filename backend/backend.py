@@ -1,4 +1,4 @@
-"""Border Sentinel Backend - Fully Functional"""
+"""Border Sentinel Backend - Enhanced Analytics & Search"""
 import os, json, sqlite3, time, uuid, aiohttp
 from datetime import datetime
 from pathlib import Path
@@ -18,7 +18,7 @@ SEARXNG_URL = os.getenv("SEARXNG_URL", "http://localhost:8304/search")
 DB_FILE = Path("border_sentinel.db")
 client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
-# Database setup
+# === DATABASE SETUP ===
 def init_db():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
@@ -39,38 +39,43 @@ def init_db():
 
 init_db()
 
+# === MODELS ===
 class SearchRequest(BaseModel):
     query: str
     target_date: Optional[str] = None
     coordinates: Optional[List[dict]] = None
 
 class AnalyzeRequest(BaseModel):
-    query: str
+    search_id: str  # Анализируем конкретный поиск по ID, а не просто текст
 
+# === CORE FUNCTIONS ===
 def generate_dorks(query: str, coords: List[dict] = None, date: str = None) -> List[str]:
-    """Generate OSINT dorks with location awareness"""
-    dorks = []
+    """Генерация умных OSINT-дорков"""
+    dorks = [f'"{query}"']
     
-    # Base dorks
-    dorks.append(f'"{query}"')
+    # Документы и отчеты
     dorks.append(f'{query} filetype:pdf')
+    dorks.append(f'{query} filetype:xlsx OR filetype:csv')
+    
+    # Госструктуры и тендеры
     dorks.append(f'site:gov.ua "{query}"')
+    dorks.append(f'site:prozorro.gov.ua "{query}"')
     
-    # Add location-based dorks if coordinates exist
+    # Геолокация (если есть координаты)
     if coords:
-        for coord in coords[:3]:  # Max 3 locations
-            lat, lng = coord['lat'], coord['lng']
-            dorks.append(f'{query} near "{lat},{lng}"')
-            dorks.append(f'{query} logistics border {lat} {lng}')
+        for coord in coords[:2]:
+            lat, lng = round(coord['lat'], 3), round(coord['lng'], 3)
+            dorks.append(f'"{query}" near "{lat},{lng}"')
+            dorks.append(f'"{query}" logistics border {lat} {lng}')
     
-    # Add date filter if exists
+    # Временной фильтр
     if date:
-        dorks.append(f'{query} after:{date}')
-    
-    return list(set(dorks))  # Remove duplicates
+        dorks.append(f'"{query}" after:{date}')
+        
+    return list(set(dorks))
 
 async def searxng_search(query: str, num_results: int = 10) -> List[dict]:
-    """Search via SearXNG"""
+    """Поиск через SearXNG"""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -78,14 +83,13 @@ async def searxng_search(query: str, num_results: int = 10) -> List[dict]:
                 params={"q": query, "format": "json", "pageno": 1},
                 timeout=aiohttp.ClientTimeout(total=20)
             ) as resp:
-                if resp.status != 200:
-                    return []
+                if resp.status != 200: return []
                 data = await resp.json()
                 return [
                     {
                         "title": r.get("title", ""),
                         "url": r.get("url", ""),
-                        "content": r.get("content", "")[:500] if r.get("content") else ""
+                        "content": r.get("content", "")[:600] if r.get("content") else ""
                     }
                     for r in data.get("results", [])[:num_results]
                 ]
@@ -94,45 +98,36 @@ async def searxng_search(query: str, num_results: int = 10) -> List[dict]:
         return []
 
 def extract_entities(results: List[dict]) -> List[dict]:
-    """Extract entities from search results"""
+    """Извлечение сущностей для графа (базовая версия)"""
     entities = []
     seen = set()
-    
-    for r in results[:10]:
-        # Simple entity extraction (can be improved with NLP)
-        title = r.get("title", "")
-        if title and title not in seen:
+    for r in results[:15]:
+        title = r.get("title", "").strip()
+        if title and len(title) > 5 and title not in seen:
             entities.append({
-                "name": title[:100],
+                "id": hash(title) % 100000,
+                "name": title[:80],
                 "type": "document",
-                "color": "#D0BCFF",
-                "related_to": []
+                "color": "#D0BCFF"
             })
             seen.add(title)
-    
-    return entities[:8]  # Max 8 entities for graph
+    return entities[:12]
 
+# === ENDPOINTS ===
 @app.post("/api/search")
 async def search(req: SearchRequest):
-    if not client:
-        raise HTTPException(500, "GROQ_API_KEY not configured")
+    if not client: raise HTTPException(500, "GROQ_API_KEY not configured")
     
     search_id = str(uuid.uuid4())[:8]
     start_time = time.time()
-    
-    # Generate dorks
     dorks = generate_dorks(req.query, req.coordinates, req.target_date)
     
-    # Search all dorks
     all_results = []
-    per_dork = {}
-    
-    for dork in dorks[:5]:  # Max 5 dorks to avoid timeout
+    for dork in dorks[:6]:
         results = await searxng_search(dork, num_results=5)
-        per_dork[dork] = len(results)
         all_results.extend(results)
     
-    # Remove duplicates by URL
+    # Дедупликация
     seen_urls = set()
     unique_results = []
     for r in all_results:
@@ -140,10 +135,9 @@ async def search(req: SearchRequest):
             seen_urls.add(r["url"])
             unique_results.append(r)
     
-    # Extract entities for graph
     entities = extract_entities(unique_results)
     
-    # Save to database
+    # Сохранение в БД
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute('''INSERT INTO searches VALUES (?,?,?,?,?,?,?,?,?,?)''', (
@@ -152,7 +146,7 @@ async def search(req: SearchRequest):
         datetime.now().isoformat(),
         round(time.time() - start_time, 2),
         json.dumps(dorks),
-        json.dumps(unique_results[:20]),
+        json.dumps(unique_results[:25]),
         json.dumps({"entities": entities}),
         len(unique_results)
     ))
@@ -163,7 +157,7 @@ async def search(req: SearchRequest):
         "id": search_id,
         "query": req.query,
         "dorks": dorks,
-        "results": unique_results[:20],
+        "results": unique_results[:25],
         "entities": entities,
         "total_results": len(unique_results),
         "duration": round(time.time() - start_time, 2),
@@ -172,26 +166,62 @@ async def search(req: SearchRequest):
 
 @app.post("/api/analyze")
 async def analyze(req: AnalyzeRequest):
-    if not client:
-        raise HTTPException(500, "GROQ_API_KEY not configured")
+    """Глубокий анализ результатов конкретного поиска"""
+    if not client: raise HTTPException(500, "GROQ_API_KEY not configured")
     
-    prompt = f"""You are an OSINT analyst. Analyze this search query and provide actionable intelligence:
+    # Получаем реальные результаты из БД
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT query, results FROM searches WHERE id=?", (req.search_id,))
+    row = c.fetchone()
+    conn.close()
+    
+    if not row: raise HTTPException(404, "Search not found")
+    
+    original_query = row[0]
+    try:
+        results = json.loads(row[1])
+    except:
+        results = []
+        
+    if not results:
+        return {"summary": "No data to analyze.", "key_entities": [], "suggested_dorks": []}
 
-Query: {req.query}
+    # Формируем контекст для LLM
+    context = "\n\n".join([
+        f"[{i+1}] TITLE: {r.get('title','')}\nSNIPPET: {r.get('content','')[:400]}\nURL: {r.get('url','')}"
+        for i, r in enumerate(results[:12])
+    ])
 
-Provide:
-1. Brief summary of what this query might reveal
-2. 3-5 suggested follow-up search queries
-3. Key entities or topics to monitor
+    prompt = f"""You are an elite OSINT Analyst. Analyze the search results below for the query: "{original_query}".
 
-Format as JSON with keys: summary, suggested_queries, entities_to_watch"""
+SEARCH RESULTS:
+{context}
+
+TASK:
+1. SUMMARY: Write a concise intelligence briefing (3-5 sentences). What do these results reveal? Identify patterns, key events, or red flags.
+2. KEY ENTITIES: Extract 3-7 specific entities (company names, people, locations, organizations) mentioned in the snippets that are relevant to the investigation.
+3. NEXT STEPS: Suggest 3-5 highly specific follow-up Google Dorks based on GAPS in the current results or interesting leads found. Do NOT repeat the original query.
+
+OUTPUT FORMAT (STRICT JSON):
+{{
+  "summary": "string",
+  "key_entities": ["string", "string"],
+  "suggested_dorks": ["string", "string"]
+}}
+
+RULES:
+- Be factual. Only use information from the provided snippets.
+- If no relevant info is found, say so clearly in the summary.
+- Suggested dorks must be advanced (use site:, filetype:, quotes, OR operators).
+- Output MUST be valid JSON only."""
 
     try:
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-            max_tokens=800,
+            temperature=0.2,
+            max_tokens=1200,
             response_format={"type": "json_object"}
         )
         return json.loads(completion.choices[0].message.content)
@@ -202,30 +232,22 @@ Format as JSON with keys: summary, suggested_queries, entities_to_watch"""
 async def get_stats():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    
     c.execute("SELECT COUNT(*) FROM searches")
     total_searches = c.fetchone()[0]
-    
     c.execute("SELECT results FROM searches")
     rows = c.fetchall()
+    conn.close()
+    
     total_results = 0
     sources = set()
-    
     for row in rows:
         try:
-            results = json.loads(row[0])
-            total_results += len(results)
-            for r in results:
-                if "url" in r:
-                    try:
-                        domain = r["url"].split("//")[1].split("/")[0]
-                        sources.add(domain)
-                    except:
-                        pass
-        except:
-            pass
-    
-    conn.close()
+            res = json.loads(row[0])
+            total_results += len(res)
+            for r in res:
+                try: sources.add(r["url"].split("//")[1].split("/")[0])
+                except: pass
+        except: pass
     
     return {
         "total_searches": total_searches,
@@ -237,20 +259,10 @@ async def get_stats():
 async def get_history():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("SELECT id, query, target_date, timestamp, total_results FROM searches ORDER BY timestamp DESC LIMIT 20")
+    c.execute("SELECT id, query, target_date, timestamp, total_results FROM searches ORDER BY timestamp DESC LIMIT 30")
     rows = c.fetchall()
     conn.close()
-    
-    return [
-        {
-            "id": r[0],
-            "query": r[1],
-            "target_date": r[2],
-            "timestamp": r[3],
-            "total_results": r[4]
-        }
-        for r in rows
-    ]
+    return [{"id": r[0], "query": r[1], "target_date": r[2], "timestamp": r[3], "total_results": r[4]} for r in rows]
 
 @app.get("/api/search/{search_id}")
 async def get_search_detail(search_id: str):
@@ -259,20 +271,12 @@ async def get_search_detail(search_id: str):
     c.execute("SELECT * FROM searches WHERE id=?", (search_id,))
     row = c.fetchone()
     conn.close()
-    
-    if not row:
-        raise HTTPException(404, "Search not found")
-    
+    if not row: raise HTTPException(404, "Not found")
     return {
-        "id": row[0],
-        "query": row[1],
-        "target_date": row[2],
-        "coordinates": json.loads(row[3]),
-        "timestamp": row[4],
-        "duration": row[5],
-        "dorks": json.loads(row[6]),
-        "results": json.loads(row[7]),
-        "analysis": json.loads(row[8]),
+        "id": row[0], "query": row[1], "target_date": row[2],
+        "coordinates": json.loads(row[3]), "timestamp": row[4],
+        "duration": row[5], "dorks": json.loads(row[6]),
+        "results": json.loads(row[7]), "analysis": json.loads(row[8]),
         "total_results": row[9]
     }
 

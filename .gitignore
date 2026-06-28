@@ -143,3 +143,14 @@ Thumbs.db
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Tauri / Rust build artifacts
+src-tauri/target/
+node_modules/
+dist/
+.env
+
+# Локальные базы данных и мусор
+*.db
+border-sentinel@1.0.0
+tauri

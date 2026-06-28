@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSINTRadar · Border Sentinel</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+/* — Design Tokens (Material You Dark) — */
+:root {
+  --p: #D0BCFF; --p-c: #4F378B; --on-p: #381E72; --on-pc: #EADDFF;
+  --sec: #CCC2DC; --sec-c: #4A4458;
+  --s: #1C1B1F; --s1: #211F26; --s2: #26232D; --s3: #2B2834;
+  --sv: #49454F; --on-s: #E6E1E5; --on-sv: #CAC4D0;
+  --out: #938F99; --out-v: #49454F;
+  --err: #F2B8B5; --warn: #FCD34D; --ok: #86EFAC; --info: #93C5FD;
+  --r: 200ms cubic-bezier(.2,0,0,1);
+  --rs: 8px; --rm: 12px; --rl: 16px; --rxl: 28px;
+}
+body.light {
+  --p:#6750A4; --p-c:#EADDFF; --on-p:#fff; --on-pc:#21005D;
+  --sec-c:#E8DEF8; --s:#FFF8FE; --s1:#F7F2FA; --s2:#F3EDF7; --s3:#EDE7F6;
+  --sv:#E7E0EC; --on-s:#1C1B1F; --on-sv:#49454F; --out:#79747E; --out-v:#CAC4D0;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--s);color:var(--on-s);font-family:'Roboto',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--p);text-decoration:none}
+button,input,select{font-family:inherit;font-size:14px}
+
+/* Layout & Header */
+header{display:flex;align-items:center;gap:16px;padding:12px 24px;background:var(--s1);border-bottom:1px solid var(--sv);position:sticky;top:0;z-index:100}
+.logo{font-weight:700;font-size:18px;color:var(--p);letter-spacing:-0.5px}
+nav{display:flex;gap:4px;margin-left:auto;overflow-x:auto}
+nav button{background:none;border:none;color:var(--on-sv);padding:8px 16px;border-radius:var(--rm);cursor:pointer;transition:var(--r);white-space:nowrap}
+nav button:hover,nav button.active{background:var(--p-c);color:var(--on-pc)}
+main{flex:1;padding:24px;max-width:1400px;margin:0 auto;width:100%}
+.tab-content{display:none;animation:fadeIn .3s ease}
+.tab-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Cards & Stats */
+.card{background:var(--s2);border-radius:var(--rl);padding:20px;margin-bottom:20px;border:1px solid var(--sv)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--s3);padding:16px;border-radius:var(--rm);border-left:4px solid var(--p)}
+.stat-val{font-size:24px;font-weight:700;color:var(--p);margin-top:4px}
+.stat-label{font-size:12px;color:var(--on-sv);text-transform:uppercase;letter-spacing:1px}
+
+/* Forms & Inputs */
+.input-group{margin-bottom:16px}
+label{display:block;margin-bottom:6px;font-size:12px;color:var(--on-sv);text-transform:uppercase}
+input[type="text"],input[type="date"],select{width:100%;padding:12px;background:var(--s1);border:1px solid var(--sv);border-radius:var(--rm);color:var(--on-s);outline:none;transition:var(--r)}
+input:focus{border-color:var(--p);box-shadow:0 0 0 2px rgba(208,188,255,0.2)}
+.btn{padding:12px 24px;border-radius:var(--rm);border:none;cursor:pointer;font-weight:600;transition:var(--r);display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--p);color:var(--on-p)}
+.btn-primary:hover{background:var(--on-pc);color:var(--p-c)}
+.btn-secondary{background:var(--p-c);color:var(--on-pc)}
+.btn-outline{background:transparent;border:1px solid var(--sv);color:var(--on-sv)}
+.btn-outline:hover{border-color:var(--p);color:var(--p)}
+
+/* Map & Graph Containers */
+#map,#network{height:400px;width:100%;border-radius:var(--rm);background:var(--s1);z-index:1}
+.table-container{overflow-x:auto;margin-top:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:12px;color:var(--on-sv);border-bottom:1px solid var(--sv);text-transform:uppercase;font-size:11px}
+td{padding:12px;border-bottom:1px solid var(--sv)}
+tr:hover td{background:rgba(255,255,255,0.02)}
+
+/* Feed & AI */
+.feed-item{padding:16px;border-bottom:1px solid var(--sv);transition:var(--r)}
+.feed-item:last-child{border-bottom:none}
+.feed-item:hover{background:rgba(255,255,255,0.02);padding-left:20px}
+.feed-title{font-weight:600;margin-bottom:4px;color:var(--on-s)}
+.feed-meta{font-size:12px;color:var(--on-sv)}
+.ai-block{margin-bottom:20px}
+.ai-block h4{color:var(--p);margin-bottom:8px;font-size:14px;text-transform:uppercase}
+.tag{display:inline-block;padding:4px 10px;background:var(--p-c);color:var(--on-pc);border-radius:var(--rs);font-size:12px;margin:2px 4px 2px 0}
+
+/* Footer */
+footer{padding:24px;text-align:center;border-top:1px solid var(--sv);margin-top:auto;color:var(--on-sv);font-size:13px}
+.footer-links{display:flex;justify-content:center;gap:20px;margin-bottom:12px}
+
+/* Utility */
+.hidden{display:none!important}
+.loading{opacity:0.6;pointer-events:none}
+.text-center{text-align:center}
+.mt-4{margin-top:16px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">OSINTRadar · Border Sentinel</div>
+  <nav id="mainNav">
+    <button class="active" onclick="switchTab('overview')">Overview</button>
+    <button onclick="switchTab('search')">Search</button>
+    <button onclick="switchTab('geo')">Geo</button>
+    <button onclick="switchTab('graph')">Graph</button>
+    <button onclick="switchTab('history')">History</button>
+    <button onclick="switchTab('settings')">Settings</button>
+  </nav>
+</header>
+
+<main>
+  <!-- OVERVIEW TAB -->
+  <section id="tab-overview" class="tab-content active">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Searches</div><div class="stat-val" id="ov-searches">-</div></div>
+      <div class="stat-card"><div class="stat-label">Results Found</div><div class="stat-val" id="ov-results">-</div></div>
+      <div class="stat-card"><div class="stat-label">Unique Sources</div><div class="stat-val" id="ov-sources">-</div></div>
+      <div class="stat-card"><div class="stat-label">Backend Status</div><div class="stat-val" style="font-size:16px;margin-top:8px" id="ov-status">Checking...</div></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:16px">Recent Activity</h3>
+      <div id="ov-recent-feed"><p class="feed-meta text-center">Loading recent searches...</p></div>
+    </div>
+  </section>
+
+  <!-- SEARCH TAB -->
+  <section id="tab-search" class="tab-content">
+    <div class="card">
+      <h3 style="margin-bottom:16px">New Intelligence Search</h3>
+      <div class="input-group">
+        <label>Search Query</label>
+        <input type="text" id="searchQuery" placeholder="e.g., logistics Ukraine border 2026">
+      </div>
+      <div class="input-group">
+        <label>Target Date (Optional)</label>
+        <input type="date" id="searchDate">
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+        <span id="geo-indicator" style="font-size:13px;color:var(--on-sv)">📍 No coordinates selected</span>
+        <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" onclick="switchTab('geo')">Add Geo Targets</button>
+      </div>
+      <button class="btn btn-primary" id="runSearchBtn" onclick="runSearch()">Run Search</button>
+      
+      <div id="search-results-area" class="hidden mt-4">
+        <hr style="border-color:var(--sv);margin:24px 0">
+        <h4 style="margin-bottom:12px">Generated Dorks & Results</h4>
+        <div id="dorks-list" style="margin-bottom:16px"></div>
+        <div id="results-feed"></div>
+        
+        <div class="card" style="margin-top:24px;background:var(--s1)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h4>AI Analysis (Llama 3.3)</h4>
+            <button class="btn btn-secondary" id="analyzeBtn" onclick="runAnalysis()">Analyze Results</button>
+          </div>
+          <div id="ai-output"><p class="feed-meta">Click "Analyze Results" to get AI briefing based on found data.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GEO TAB -->
+  <section id="tab-geo" class="tab-content">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>Geolocation Targets</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" onclick="clearMarkers()">Clear All</button>
+          <button class="btn btn-primary" onclick="useCoordsInSearch()">Use in Search</button>
+        </div>
+      </div>
+      <div id="map"></div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>ID</th><th>Lat</th><th>Lng</th><th>Radius (m)</th><th>Action</th></tr></thead>
+          <tbody id="markers-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- GRAPH TAB -->
+  <section id="tab-graph" class="tab-content">
+    <div class="card">
+      <h3 style="margin-bottom:16px">Entity Relationship Graph</h3>
+      <div id="network"></div>
+      <p class="feed-meta mt-4 text-center">Graph populates automatically after search analysis.</p>
+    </div>
+  </section>
+
+  <!-- HISTORY TAB -->
+  <section id="tab-history" class="tab-content">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>Search History</h3>
+        <button class="btn btn-outline" onclick="loadHistory()">Refresh</button>
+      </div>
+      <div id="history-list"><p class="feed-meta text-center">Loading history...</p></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS TAB -->
+  <section id="tab-settings" class="tab-content">
+    <div class="card">
+      <h3 style="margin-bottom:16px">Dashboard Settings</h3>
+      <div class="input-group">
+        <label>Backend API URL</label>
+        <input type="text" id="setting-api-url" value="http://127.0.0.1:8000">
+      </div>
+      <div class="input-group">
+        <label>Theme</label>
+        <select id="setting-theme" onchange="toggleTheme(this.value)">
+          <option value="dark">Dark (Default)</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-links">
+    <a href="https://linkedin.com/in/alexander-mints" target="_blank">LinkedIn</a>
+    <a href="https://github.com/mintosintdev" target="_blank">GitHub</a>
+  </div>
+  <div>OSINTRadar · Border Sentinel · 2026<br>Alexander Mints · OSINT Engineer · AI Developer</div>
+</footer>
+
+<script>
+// === STATE & CONFIG ===
+let API_BASE = localStorage.getItem('api_url') || 'http://127.0.0.1:8000';
+let markers = [];
+let map, network;
+let currentSearchId = null; // Храним ID последнего поиска для анализа
+
+// === INITIALIZATION ===
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  initGraph();
+  loadStats();
+  loadHistory();
+  
+  // Load settings
+  const savedTheme = localStorage.getItem('theme');
+  if(savedTheme) {
+    document.getElementById('setting-theme').value = savedTheme;
+    toggleTheme(savedTheme);
+  }
+});
+
+// === NAVIGATION ===
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('#mainNav button').forEach(el => el.classList.remove('active'));
+  
+  document.getElementById(`tab-${tabName}`).classList.add('active');
+  const buttons = document.querySelectorAll('#mainNav button');
+  const tabs = ['overview','search','geo','graph','history','settings'];
+  const idx = tabs.indexOf(tabName);
+  if(idx >= 0 && buttons[idx]) buttons[idx].classList.add('active');
+
+  if(tabName === 'geo' && map) setTimeout(() => map.invalidateSize(), 100);
+  if(tabName === 'graph' && network) setTimeout(() => network.fit(), 100);
+}
+
+// === MAP LOGIC ===
+function initMap() {
+  map = L.map('map').setView([50.4501, 30.5234], 6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO'
+  }).addTo(map);
+
+  map.on('click', function(e) {
+    addMarker(e.latlng.lat, e.latlng.lng);
+  });
+}
+
+function addMarker(lat, lng, radius = 5000) {
+  const id = Date.now();
+  const circle = L.circle([lat, lng], {radius: radius, color: '#D0BCFF', fillOpacity: 0.1}).addTo(map);
+  const markerObj = {id, lat, lng, radius, circle};
+  markers.push(markerObj);
+  updateMarkersTable();
+  updateGeoIndicator();
+}
+
+function clearMarkers() {
+  markers.forEach(m => map.removeLayer(m.circle));
+  markers = [];
+  updateMarkersTable();
+  updateGeoIndicator();
+}
+
+function updateMarkersTable() {
+  const tbody = document.getElementById('markers-table-body');
+  tbody.innerHTML = markers.map(m => `
+    <tr>
+      <td>${m.id}</td>
+      <td>${m.lat.toFixed(4)}</td>
+      <td>${m.lng.toFixed(4)}</td>
+      <td>${m.radius}</td>
+      <td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px" onclick="removeMarker(${m.id})">Remove</button></td>
+    </tr>
+  `).join('');
+}
+
+function removeMarker(id) {
+  const idx = markers.findIndex(m => m.id === id);
+  if(idx > -1) {
+    map.removeLayer(markers[idx].circle);
+    markers.splice(idx, 1);
+    updateMarkersTable();
+    updateGeoIndicator();
+  }
+}
+
+function updateGeoIndicator() {
+  const el = document.getElementById('geo-indicator');
+  if(markers.length > 0) {
+    el.innerHTML = `📍 ${markers.length} targets active`;
+    el.style.color = 'var(--ok)';
+  } else {
+    el.innerHTML = '📍 No coordinates selected';
+    el.style.color = 'var(--on-sv)';
+  }
+}
+
+function useCoordsInSearch() {
+  switchTab('search');
+  toast('Coordinates loaded into search context');
+}
+
+// === GRAPH LOGIC ===
+function initGraph() {
+  const container = document.getElementById('network');
+  const data = {nodes: new vis.DataSet([]), edges: new vis.DataSet([])};
+  const options = {
+    nodes: {shape:'dot', size:16, color:{background:'#D0BCFF', border:'#4F378B'}, font:{color:'#E6E1E5'}},
+    edges: {color:'#938F99', smooth:{type:'continuous'}},
+    physics: {stabilization:false}
+  };
+  network = new vis.Network(container, data, options);
+}
+
+function updateGraph(entities) {
+  if(!entities || entities.length === 0) return;
+  const nodes = entities.map((e, i) => ({id: i+1, label: e.name || e.title, group: e.type}));
+  const edges = []; 
+  for(let i=0; i<nodes.length-1; i++) edges.push({from: i+1, to: i+2});
+  
+  network.setData({
+    nodes: new vis.DataSet(nodes),
+    edges: new vis.DataSet(edges)
+  });
+  network.fit();
+}
+
+// === SEARCH & ANALYSIS ===
+async function runSearch() {
+  const query = document.getElementById('searchQuery').value.trim();
+  const date = document.getElementById('searchDate').value;
+  const btn = document.getElementById('runSearchBtn');
+  
+  if(!query) { alert('Please enter a query'); return; }
+  
+  btn.disabled = true;
+  btn.innerText = 'Searching...';
+  
+  try {
+    const coords = markers.map(m => ({lat: m.lat, lng: m.lng, radius: m.radius}));
+    
+    const res = await fetch(`${API_BASE}/api/search`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query, target_date: date || null, coordinates: coords})
+    });
+    
+    if(!res.ok) throw new Error('Search failed');
+    const data = await res.json();
+    
+    currentSearchId = data.id; // Сохраняем ID для анализа!
+    
+    // Render Dorks
+    document.getElementById('dorks-list').innerHTML = data.dorks.map(d => 
+      `<span class="tag">${escapeHtml(d)}</span>`
+    ).join('');
+    
+    // Render Results
+    const feed = document.getElementById('results-feed');
+    if(data.results.length === 0) {
+      feed.innerHTML = '<p class="feed-meta text-center">No results found.</p>';
+    } else {
+      feed.innerHTML = data.results.map(r => `
+        <div class="feed-item">
+          <div class="feed-title"><a href="${r.url}" target="_blank">${escapeHtml(r.title)}</a></div>
+          <div class="feed-meta">${escapeHtml((r.content||'').substring(0, 150))}...</div>
+        </div>
+      `).join('');
+    }
+    
+    // Update Graph if entities exist
+    if(data.entities && data.entities.length > 0) {
+      updateGraph(data.entities);
+    }
+    
+    document.getElementById('search-results-area').classList.remove('hidden');
+    loadStats(); // Refresh stats
+    
+  } catch(e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Run Search';
+  }
+}
+
+async function runAnalysis() {
+  if(!currentSearchId) {
+    document.getElementById('ai-output').innerHTML = 
+      '<p style="color: var(--err)">️ Please run a search first to generate an analysis ID.</p>';
+    return;
+  }
+  
+  const btn = document.getElementById('analyzeBtn');
+  const out = document.getElementById('ai-output');
+  
+  btn.disabled = true;
+  btn.innerText = 'Analyzing...';
+  out.innerHTML = '<p class="feed-meta">Processing intelligence data via Groq...</p>';
+  
+  try {
+    // ИСПРАВЛЕНИЕ: Отправляем search_id, а не query
+    const res = await fetch(`${API_BASE}/api/analyze`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({search_id: currentSearchId}) 
+    });
+    
+    if(!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.detail ? errData.detail[0].msg : 'Analysis failed');
+    }
+    
+    const data = await res.json();
+    
+    let html = '';
+    if(data.summary) html += `<div class="ai-block"><h4>Intelligence Summary</h4><p>${escapeHtml(data.summary)}</p></div>`;
+    if(data.key_entities && data.key_entities.length) {
+      html += `<div class="ai-block"><h4>Key Entities</h4><div>${data.key_entities.map(e=>`<span class="tag">${escapeHtml(e)}</span>`).join('')}</div></div>`;
+    }
+    if(data.suggested_dorks && data.suggested_dorks.length) {
+      html += `<div class="ai-block"><h4>Suggested Next Steps</h4><div>${data.suggested_dorks.map(d=>`<span class="tag" style="background:var(--s3);border:1px solid var(--sv)">${escapeHtml(d)}</span>`).join('')}</div></div>`;
+    }
+    
+    out.innerHTML = html || '<p class="feed-meta">No specific insights generated.</p>';
+    
+  } catch(e) {
+    out.innerHTML = `<p style="color: var(--err)">Error: ${e.message}</p>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Analyze Results';
+  }
+}
+
+// === STATS & HISTORY ===
+async function loadStats() {
+  try {
+    const res = await fetch(`${API_BASE}/api/stats`);
+    const s = await res.json();
+    document.getElementById('ov-searches').innerText = s.total_searches;
+    document.getElementById('ov-results').innerText = s.total_results;
+    document.getElementById('ov-sources').innerText = s.unique_sources;
+    document.getElementById('ov-status').innerText = 'Online';
+    document.getElementById('ov-status').style.color = 'var(--ok)';
+  } catch(e) {
+    document.getElementById('ov-status').innerText = 'Offline';
+    document.getElementById('ov-status').style.color = 'var(--err)';
+  }
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch(`${API_BASE}/api/history`);
+    const h = await res.json();
+    const list = document.getElementById('history-list');
+    const recent = document.getElementById('ov-recent-feed');
+    
+    if(h.length === 0) {
+      list.innerHTML = '<p class="feed-meta text-center">No searches yet.</p>';
+      return;
+    }
+    
+    const html = h.map(item => `
+      <div class="feed-item" style="cursor:pointer" onclick="restoreSearch('${item.id}')">
+        <div class="feed-title">${escapeHtml(item.query)}</div>
+        <div class="feed-meta">${new Date(item.timestamp).toLocaleString()} • ${item.total_results} results</div>
+      </div>
+    `).join('');
+    
+    list.innerHTML = html;
+    recent.innerHTML = html.slice(0, 3); // Show last 3 in overview
+  } catch(e) { console.error(e); }
+}
+
+function restoreSearch(id) {
+  switchTab('search');
+  toast(`Restored search ${id}`);
+}
+
+// === SETTINGS & UTILS ===
+function toggleTheme(theme) {
+  if(theme === 'light') document.body.classList.add('light');
+  else document.body.classList.remove('light');
+  localStorage.setItem('theme', theme);
+}
+
+function saveSettings() {
+  const url = document.getElementById('setting-api-url').value;
+  API_BASE = url;
+  localStorage.setItem('api_url', url);
+  toast('Settings saved');
+  loadStats();
+}
+
+function escapeHtml(text) {
+  if(!text) return '';
+  return String(text).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function toast(msg) {
+  console.log(msg);
+}
+</script>
+</body>
+</html>
