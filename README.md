@@ -155,3 +155,4 @@ border-sentinel/
 ## Author
 
 **Alexander Mints** — OSINT Engineer · AI Developer · [GitHub](https://github.com/mintosintdev)
+[Telegram](https://bankyiv.t.me)
