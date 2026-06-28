@@ -154,5 +154,4 @@ border-sentinel/
 
 ## Author
 
-**Alexander Mints** — OSINT Engineer · AI Developer  
-[LinkedIn](https://linkedin.com/in/alexander-mints) · [GitHub](https://github.com/mintosintdev)
+**Alexander Mints** — OSINT Engineer · AI Developer · [GitHub](https://github.com/mintosintdev)
